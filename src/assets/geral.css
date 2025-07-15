@@ -1,0 +1,12 @@
+body {
+      font-family: 'Segoe UI', sans-serif;
+    }
+    
+    .carousel-item {
+      height: 70vh;
+      background-size: cover;
+      background-position: center;
+    }
+    .cards-section h5 { font-weight: 600; }
+    .cards-section a { color: #2A8F36; text-decoration: none; }
+    .cards-section a:hover { text-decoration: underline; }

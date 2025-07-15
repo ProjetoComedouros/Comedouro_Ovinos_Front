@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Relatório</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+  
+</head>
+
+<body>
+  <!-- Navbar superior -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom fixed-top">
+    <div class="container-fluid">
+      <a class="navbar-brand ms-3" href="#">
+        <img src="/images/logo.jpg" alt="LogoNATA" height="36" class="me-2" />
+        <strong>Comedouro Ovinos</strong>
+      </a>
+      <div class="ms-auto me-4">
+        <i class="bi bi-person-circle me-2"></i>
+        <span>Usuário logado</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <a href="Register.html">Cadastrar Ovelha</a>
+    <a href="#" class="fw-bold">Ovelhas</a>
+    <a href="#">Perfis de Usuários</a>
+  </div>
+
+  <!-- Conteúdo principal -->
+  <div class="content">
+    <h3 class="mb-4">Relatório</h3>
+
+    <!-- Opções -->
+    <div class="d-flex align-items-center mb-3">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="selecionar" />
+        <label class="form-check-label" for="selecionar">Selecionar</label>
+      </div>
+      <button class="btn btn-exportar btn-sm ms-auto me-2"><i class="bi bi-file-earmark-pdf"></i> PDF / Excel</button>
+      <button class="btn btn-outline-secondary btn-sm"><i class="bi bi-printer"></i> Imprimir</button>
+    </div>
+
+    <!-- Tabela simulada -->
+    <div class="table-placeholder">
+      <div class="row fw-semibold mb-2">
+        <div class="col-md">Animal</div>
+        <div class="col-md">Comp. Digestivo</div>
+        <div class="col-md">Desempenho</div>
+        <div class="col-md">Viabilidade</div>
+      </div>
+
+    <a href="Animal.html?id=ovelha1" class="text-decoration-none text-dark">
+     <div class="row mb-2 border rounded py-2 px-1 hover-shadow">
+        <div class="col-md">Ovelha 01</div>
+        <div class="col-md">OK</div>
+        <div class="col-md">Alta</div>
+        <div class="col-md">Viável</div>
+     </div>
+    </a>
+
+    <a href="Animal.html?id=ovelha2" class="text-decoration-none text-dark">
+        <div class="row mb-2 border rounded py-2 px-1 hover-shadow">
+            <div class="col-md">Ovelha 02</div>
+            <div class="col-md">OK</div>
+            <div class="col-md">Baixa</div>
+            <div class="col-md">Inviável</div>
+        </div>
+    </a>
+
+    <a href="Animal.html?id=ovelha3" class="text-decoration-none text-dark">
+        <div class="row mb-2 border rounded py-2 px-1 hover-shadow">
+            <div class="col-md">Ovelha 03</div>
+            <div class="col-md">OK</div>
+            <div class="col-md">Baixa</div>
+            <div class="col-md">Inviável</div>
+        </div>
+    </a>
+    </div>
+  </div>
+
+</body>
+
+<style>
+    :root {
+      --verde-nata: #198754;
+      --fundo-claro: #f8f9fa;
+      --texto-cinza: #444;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    .sidebar {
+      width: 220px;
+      height: 100vh;
+      position: fixed;
+      top: 56px;
+      left: 0;
+      background-color: var(--fundo-claro);
+      padding-top: 1rem;
+      border-right: 1px solid #ddd;
+    }
+
+    .sidebar a {
+      padding: 0.75rem 1.25rem;
+      display: block;
+      color: var(--texto-cinza);
+      text-decoration: none;
+    }
+
+    .sidebar a:hover {
+      background-color: #e9ecef;
+    }
+
+    .content {
+      margin-left: 220px;
+      padding: 2rem;
+      margin-top: 56px;
+    }
+
+    .form-check {
+      margin-right: 1rem;
+    }
+
+    .btn-exportar {
+      background-color: var(--verde-nata);
+      color: white;
+    }
+
+    .btn-exportar:hover {
+      background-color: #157347;
+    }
+
+    .top-bar {
+      height: 56px;
+    }
+
+    .table-placeholder {
+      background-color: #ffffff;
+      border: 1px solid #dee2e6;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-top: 1rem;
+    }
+
+  </style>
+</html>
+
