@@ -40,12 +40,193 @@
       </div>
     </section>
 
-    <footer class="py-4 text-center">
-      <div class="container">
-        <p class="mb-1">&copy; 2025 AutoFeederPro.</p>
-        <small>Desenvolvido com Vue.js, Bootstrap & CDN.</small>
+
+    <section id="como funciona" class="py-5 como-funciona-section">
+  <div class="container">
+    <!-- Título + Subheading -->
+    <div class="text-center mb-4">
+      
+    </div>
+    <!-- Cards de benefício -->
+    <div class="beneficios row gy-4">
+      <!-- Card 1 -->
+      <div class="col-12">
+        <div class="card bg-white border-0 shadow-sm">
+          <div class="row g-0 align-items-center">
+            <div class="col-md-3">
+              <img
+                src="assets/img/beneficio-1.jpg"
+                class="img-fluid rounded-start"
+                alt="Fácil de usar"
+              />
+            </div>
+            <div class="col-md-9">
+              <div class="card-body">
+                <h5 class="card-title">Fácil de usar por todos e em qualquer lugar</h5>
+                <p class="card-text text-muted">
+                  Por meio dos comedouros coletamos dados sobre o seu animal de forma automática e intuitiva.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </footer>
+      <!-- Card 2 -->
+      <div class="col-12">
+        <div class="card bg-white border-0 shadow-sm">
+          <div class="row g-0 align-items-center">
+            <div class="col-md-3">
+              <img
+                src="assets/img/beneficio-2.jpg"
+                class="img-fluid rounded-start"
+                alt="Análise inteligente"
+              />
+            </div>
+            <div class="col-md-9">
+              <div class="card-body">
+                <h5 class="card-title">Analisamos os dados de forma inteligente</h5>
+                <p class="card-text text-muted">
+                  Nosso sistema gera relatórios com gráficos e tabelas sobre padrões de alimentação e rentabilidade.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Card 3 -->
+      <div class="col-12">
+        <div class="card bg-white border-0 shadow-sm">
+          <div class="row g-0 align-items-center">
+            <div class="col-md-3">
+              <img
+                src="assets/img/beneficio-3.jpg"
+                class="img-fluid rounded-start"
+                alt="Acesso remoto"
+              />
+            </div>
+            <div class="col-md-9">
+              <div class="card-body">
+                <h5 class="card-title">Acesse de onde quiser</h5>
+                <p class="card-text text-muted">
+                  Monitore o rebanho em tempo real pelo celular ou computador, sem sair de casa!
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="quem-somos" class="py-5 quem-somos-section">
+  <div class="container">
+    <!-- Título + Subheading -->
+    <div class="text-center mb-4">
+      <h2 class="fw-bold" style="font-family: var(--font-heading);">Quem somos?</h2>
+      <p class="text-muted">Subheading</p>
+    </div>
+    <!-- Cards de equipe -->
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+      <!-- Card 1 -->
+      <div class="col">
+        <div class="card h-100 border-0 shadow-sm">
+          <img src="assets/img/team1.jpg" class="card-img-top" alt="Rafael">
+          <div class="card-body">
+            <h5 class="card-title">Rafael Sanches Venturini</h5>
+            <p class="text-muted">Coordenador</p>
+            <p class="card-text text-muted small">Saiba Mais</p>
+          </div>
+        </div>
+      </div>
+      <!-- Card 2 -->
+      <div class="col">
+        <div class="card h-100 border-0 shadow-sm">
+          <img src="assets/img/team2.jpg" class="card-img-top" alt="Fernando">
+          <div class="card-body">
+            <h5 class="card-title">Fernando Mariano Bayer</h5>
+            <p class="text-muted">Coordenador-adjunto</p>
+            <p class="card-text text-muted small">Saiba Mais</p>
+          </div>
+        </div>
+      </div>
+      <!-- Card 3 -->
+       <div class="col">
+        <div class="card h-100 border-0 shadow-sm">
+          <img src="assets/img/team3.jpg" class="card-img-top" alt="Leandro">
+          <div class="card-body">
+            <h5 class="card-title">Leandro Roggia</h5>
+            <p class="text-muted">Coordenador-adjunto</p>
+            <p class="card-text text-muted small">Saiba Mais</p>
+          </div>
+        </div>
+      </div>
+       <div class="col">
+        <div class="card h-100 border-0 shadow-sm">
+          <img src="assets/img/team3.jpg" class="card-img-top" alt="Leandro">
+          <div class="card-body">
+            <h5 class="card-title">Luciano Retzlaff</h5>
+            <p class="text-muted">Coordenador-adjunto</p>
+            <p class="card-text text-muted small">Saiba Mais</p>
+          </div>
+        </div>
+      </div>
+       <div class="col">
+        <div class="card h-100 border-0 shadow-sm">
+          <img src="assets/img/team3.jpg" class="card-img-top" alt="Leandro">
+          <div class="card-body">
+            <h5 class="card-title">Renato Preigschadt de Azevedo</h5>
+            <p class="text-muted">Coordenador-adjunto</p>
+            <p class="card-text text-muted small">Saiba Mais</p>
+          </div>
+        </div>
+      </div>
+       <div class="col">
+        <div class="card h-100 border-0 shadow-sm">
+          <img src="assets/img/team3.jpg" class="card-img-top" alt="Leandro">
+          <div class="card-body">
+            <h5 class="card-title">Arthur Montero Portella</h5>
+            <p class="text-muted">Coordenador-adjunto</p>
+            <p class="card-text text-muted small">Saiba Mais</p>
+          </div>
+        </div>
+      </div>
+       <div class="col">
+        <div class="card h-100 border-0 shadow-sm">
+          <img src="assets/img/team3.jpg" class="card-img-top" alt="Leandro">
+          <div class="card-body">
+            <h5 class="card-title">Eduarda Padilha Zorzo</h5>
+            <p class="text-muted">Coordenador-adjunto</p>
+            <p class="card-text text-muted small">Saiba Mais</p>
+          </div>
+        </div>
+      </div>
+       <div class="col">
+        <div class="card h-100 border-0 shadow-sm">
+          <img src="assets/img/team3.jpg" class="card-img-top" alt="Leandro">
+          <div class="card-body">
+            <h5 class="card-title">Henrique De Barros Da Silva</h5>
+            <p class="text-muted">Coordenador-adjunto</p>
+            <p class="card-text text-muted small">Saiba Mais</p>
+          </div>
+        </div>
+      </div>
+       <div class="col">
+        <div class="card h-100 border-0 shadow-sm">
+          <img src="assets/img/team3.jpg" class="card-img-top" alt="Leandro">
+          <div class="card-body">
+            <h5 class="card-title">Victor Couto Cardoso</h5>
+            <p class="text-muted">Coordenador-adjunto</p>
+            <p class="card-text text-muted small">Saiba Mais</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+    
   </div>
 
 </template>

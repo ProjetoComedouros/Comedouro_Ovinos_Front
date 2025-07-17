@@ -1,5 +1,11 @@
-<!DOCTYPE html>
-<html lang="">
+ <!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Comedouros</title>
+
+  <html lang="pt-br">
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -16,6 +22,237 @@
       <strong>We're sorry but <%= htmlWebpackPlugin.options.title %> doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
     </noscript>
     <div id="app"></div>
-    <!-- built files will be auto injected -->
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&family=Open+Sans:wght@400;600&display=swap"
+    rel="stylesheet"
+  />
+
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
+    rel="stylesheet"
+  />
+
+ <link rel="stylesheet" href="geral.css">
+
+  <style>
+    :root {
+      --color-primary: #20913C;
+      --color-dark:    #0F4C22;
+      --font-heading:  'Montserrat', sans-serif;
+      --font-body:     'Open Sans', sans-serif;
+    }
+    body {
+      font-family: var(--font-body);
+      color: #333;
+      line-height: 1.6;
+    }
+    h1,h2,h3,h4,h5,h6 {
+      font-family: var(--font-heading);
+      color: var(--color-dark);
+    }
+    a { text-decoration: none; }
+   
+    .navbar {
+      background-color: #fff;
+    }
+   
+    .hero-section {
+      position: relative;
+      background: url('imagens/caprinos.webp') center/cover no-repeat;
+      min-height: 70vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hero-section::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-color:rgba(255, 255, 255, 0.3)
+    }
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      color: #fff;
+    }
+    .hero-content .btn-primary {
+      background-color: var(--color-primary);
+      border-color: var(--color-primary);
+    }
+    .hero-content .btn-primary:hover {
+      background-color: var(--color-dark);
+      border-color: var(--color-dark);
+    }
+
+    .feature-card i {
+      font-size: 2.5rem;
+      color: var(--color-primary);
+    } 
+    footer {
+      background: #f8f9fa;
+    }
+   
+  /* Deixar os cards em branco semi-opaco para legibilidade */
+  .quem-somos-section .card {
+    background-color: rgba(255, 255, 255, 0.9);
+  }
+
+    .como-funciona-section{
+      background-color:  rgba(15, 122, 42, 0.50);
+    }
+  
+    .info-section {
+    background-color: rgba(32, 145, 60, 0.15);
+    padding: 3rem 0;
+  }
+  .info-section h2 {
+    color: var(--color-primary);
+    font-family: var(--font-heading);
+  }
+  .info-section p.subtitle {
+    color: #6c757d;
+  }
+  .info-section .info-card {
+    background: #fff;
+    border-radius: .5rem;
+    box-shadow: 0 .125rem .25rem rgba(0,0,0,0.075);
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+  }
+  .info-section .info-card i {
+    font-size: 2.5rem;
+    color: var(--color-primary);
+    margin-right: 1rem;
+  }
+
+  /* Footer com fundo sólido */
+  .site-footer {
+    background-color:  rgba(15, 122, 42, 0.50);
+    padding: 4rem 0 2rem;
+  }
+  .site-footer .footer-logo img {
+    max-width: 180px;
+    margin-bottom: 1rem;
+  }
+  .site-footer .footer-logo p {
+    margin: 0;
+    color: rgba(255,255,255,0.75);
+  }
+  .site-footer .footer-links h6 {
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--color-primary);
+    margin-bottom: 1rem;
+  }
+  .site-footer .footer-links ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .site-footer .footer-links ul li + li {
+    margin-top: .5rem;
+  }
+  .site-footer .footer-links ul li a {
+    color: rgba(255,255,255,0.75);
+    text-decoration: none;
+  }
+  .site-footer .footer-links ul li a:hover {
+    color: #fff;
+  }
+  </style>
+</head>
+<body>
+
+  
+  
+
+
+<!-- Footer sólido -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="row mb-5">
+      <div class="col-md-4 footer-logo">
+        <img src="assets/img/logo.svg" alt="Comedouros">
+        <p>Inteligência que conecta a pecuária</p>
+      </div>
+      <div class="col-md-2 footer-links">
+        <h6>Institucional</h6>
+        <ul>
+          <li><a href="#">Quem somos</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Trabalhe conosco</a></li>
+        </ul>
+      </div>
+      <div class="col-md-2 footer-links">
+        <h6>Pesquisa</h6>
+        <ul>
+          <li><a href="#">SOBRE</a></li>
+        </ul>
+      </div>
+      <div class="col-md-2 footer-links">
+        <h6>Informações importantes</h6>
+        <ul>
+          <li><a href="#">lorem</a></li>
+          <li><a href="#">Agro</a></li>
+          <li><a href="#">Automação </a></li>
+        </ul>
+      </div>
+      <div class="col-md-2 footer-links">
+        <h6>Santa Maria-RS</h6>
+        <ul>
+          <li>Rua XXX</li>
+          <li>YYY</li>
+          <li>CEP: XX.XXX-XXX</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+
+  <footer class="py-4 text-center">
+    <div class="container">
+      <p class="mb-1">&copy; 2025 Comedouros Automáticos.</p>
+    </div>
+  </footer>
+
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    const { createApp } = Vue;
+    createApp({
+      data() {
+        return {
+          features: [
+            {
+              icon: 'bi-gear-fill',
+              title: 'Alta Precisão',
+              text: 'Exatidão na da quantidade de ração para cada animal.'
+            },
+            {
+              icon: 'bi-currency-dollar',
+              title: 'Economia',
+              text: 'Controle da rentabilidade animal'
+            },
+            {
+              icon: 'bi-wifi',
+              title: 'Conectividade',
+              text: 'Monitoramento remoto via site e alertas em tempo real.'
+            }
+          ]
+        };
+      }
+    }).mount('#produtos-app');
+  </script>
+</body>
+</html>
+
   </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Login</title>
+  <title>LoginPage</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
 </head>
 
@@ -12,8 +12,7 @@
     <h2 class="login-title">Login</h2>
 
     <!-- FORMULÁRIO APENAS VISUAL -->
-   import LoginForm from '/components/login/LoginForm.vue'
-
+    import loginform from '/components/login/loginForm.vue';
   </div>
 
   <style>
