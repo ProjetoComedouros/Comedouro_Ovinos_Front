@@ -1,0 +1,109 @@
+<tamplate>
+    <div class="container-info">
+    <h1><i class="bi bi-patch-check-fill me-2"></i>Informações da Ovelha</h1>
+    <div id="animal-info" class="fs-5 text-center text-muted">Carregando...</div>
+  </div>
+
+</tamplate>
+
+  
+<script>
+    // Função para formatar meses em "X anos e Y meses"
+    function formatarIdade(mesesTotais) {
+      const anos = Math.floor(mesesTotais / 12);
+      const meses = mesesTotais % 12;
+      let resultado = "";
+      if (anos > 0) resultado += anos + (anos === 1 ? " ano" : " anos");
+      if (meses > 0) {
+        if (anos > 0) resultado += " e ";
+        resultado += meses + (meses === 1 ? " mês" : " meses");
+      }
+      if (!resultado) resultado = "0 meses";
+      return resultado;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
+
+    // Agora idade é armazenada em meses inteiros para facilitar o cálculo
+    const dadosAnimais = {
+      ovelha1: { nome: "Ovelha 001", peso: "45kg", idadeMeses: 24, dataRegistro: "2023-04-15" },  // 2 anos
+      ovelha2: { nome: "Ovelha 002", peso: "47kg", idadeMeses: 18, dataRegistro: "2023-05-10" },  // 1 ano e 6 meses
+      ovelha3: { nome: "Ovelha 003", peso: "50kg", idadeMeses: 36, dataRegistro: "2023-01-20" },  // 3 anos
+    };
+
+    const info = dadosAnimais[id];
+    const container = document.getElementById("animal-info");
+
+    if (info) {
+      const idadeFormatada = formatarIdade(info.idadeMeses);
+      container.innerHTML = `
+        <p><strong>Nome:</strong> ${info.nome}</p>
+        <p><strong>Peso:</strong> ${info.peso}</p>
+        <p><strong>Idade:</strong> ${idadeFormatada}</p>
+        <p class="data-registro">Data de Registro: ${new Date(info.dataRegistro).toLocaleDateString('pt-BR')}</p>
+      `;
+      container.classList.remove('text-muted');
+      container.classList.add('text-dark', 'text-start');
+    } else {
+      container.textContent = "Animal não encontrado.";
+      container.classList.remove('text-muted');
+      container.classList.add('alert-warning');
+    }
+
+    export default {
+      name: 'AnimalInfo',
+      mounted() {
+        // Verifica se o ID é válido
+        if (!id || !dadosAnimais[id]) {
+          document.getElementById("animal-info").textContent = "ID inválido ou animal não encontrado.";
+        }
+      }
+    };
+  </script>
+
+<style>
+    :root {
+      --verde-nata: #198754;
+      --fundo-claro: #f8f9fa;
+      --texto-cinza: #444;
+    }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--fundo-claro);
+      padding: 2rem;
+      min-height: 100vh;
+    }
+    .container-info {
+      max-width: 600px;
+      background-color: white;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 2rem;
+      box-shadow: 0 0 10px rgb(0 0 0 / 0.05);
+      margin: 2rem auto;
+    }
+    h1 {
+      color: var(--verde-nata);
+      margin-bottom: 1.5rem;
+      font-weight: 700;
+      text-align: center;
+    }
+    p {
+      font-size: 1.1rem;
+      color: var(--texto-cinza);
+      margin-bottom: 1rem;
+    }
+    .data-registro {
+      font-size: 0.9rem;
+      color: #666;
+      font-style: italic;
+      margin-top: 1.5rem;
+      text-align: right;
+    }
+    .alert-warning {
+      text-align: center;
+      font-weight: 600;
+      color: #dc3545; /* bootstrap danger */
+    }
+  </style>
