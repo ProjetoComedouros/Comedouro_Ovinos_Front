@@ -1,24 +1,17 @@
 <template>
 
-<Navbar />
-<HomePage />
-<Footer />
+  <HomePage />
 
 </template>
 
 <script>
 
-import '@/assets/geral.css'
-import Navbar from '@/components/Navbar.vue'
-import HomePage from '@/components/HomePage.vue'
-import Footer from '@/components/Footer.vue'
+import HomePage from '@/views/HomePage.vue'
+
 export default {
   name: 'App',
   components: {
-    Navbar,
-    HomePage,
-    Footer
+    HomePage
   }
-};
-
+}
 </script>
