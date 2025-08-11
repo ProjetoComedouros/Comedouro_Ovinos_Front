@@ -1,10 +1,10 @@
 <template>
   <div class="col-md-4 mb-4">
-    <div class="card h-100 text-center shadow-sm">
-      <img :src="imagem" class="card-img-top" alt="Imagem do produto" />
+    <div class="card h-100 text-center border-0">
       <div class="card-body">
-        <h5 class="card-title">{{ titulo }}</h5>
-        <p class="card-text">{{ descricao }}</p>
+        <i :class="['bi', icon, 'fs-1', 'text-success']"></i>
+        <h5 class="card-title mt-3">{{ title }}</h5>
+        <p class="card-text">{{ text }}</p>
       </div>
     </div>
   </div>
@@ -12,10 +12,6 @@
 
 <script>
 export default {
-  props: {
-    titulo: String,
-    descricao: String,
-    imagem: String
-  }
+  props: ['icon', 'title', 'text']
 }
 </script>

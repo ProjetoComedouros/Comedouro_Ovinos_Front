@@ -22,24 +22,15 @@ export default {
   components: { FeatureCard },
   data() {
     return {
-      produtos: [
-        {
-          titulo: 'Comedouro Inteligente',
-          descricao: 'Monitora e registra a alimentação dos ovinos em tempo real.',
-          imagem: '/images/comedouro.png'
-        },
-        {
-          titulo: 'Painel de Controle',
-          descricao: 'Gerencie e visualize dados dos comedouros de forma centralizada.',
-          imagem: '/images/painel.png'
-        },
-        {
-          titulo: 'Sensor de Presença',
-          descricao: 'Detecta automaticamente a presença dos animais no comedouro.',
-          imagem: '/images/sensor.png'
-        }
+      features: [
+        { icon: 'bi-gear-fill', title: 'Alta Precisão', text: 'Controle exato da quantidade de ração para cada animal.' },
+        { icon: 'bi-currency-dollar', title: 'Economia', text: 'Redução de até 30% no desperdício de alimento.' },
+        { icon: 'bi-wifi', title: 'Conectividade', text: 'Monitoramento remoto via app e alertas em tempo real.' },
+        { icon: 'bi-graph-up', title: 'Relatórios Inteligentes', text: 'Análise de dados para otimização do rebanho.' },
+        { icon: 'bi-shield-lock-fill', title: 'Segurança', text: 'Dados protegidos e acesso controlado.' },
+        { icon: 'bi-people-fill', title: 'Suporte Especializado', text: 'Equipe pronta para ajudar sempre que precisar.' }
       ]
-    }
+    };
   }
-}
+};
 </script>
