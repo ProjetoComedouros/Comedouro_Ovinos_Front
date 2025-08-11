@@ -1,6 +1,7 @@
 <template>
   <div>
     <NavbarSection />
+    <router-view />
     <HeroSection />
     <ProductSection />
     <HowsWorkSection />

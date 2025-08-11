@@ -1,12 +1,10 @@
 import { createApp } from 'vue'
-<<<<<<< HEAD
-import App           from './App.vue'
-import 'bootstrap/dist/css/bootstrap.min.css'
-
-createApp(App).mount('#app')
-=======
 import App from './App.vue'
 import router from './router'
+import VueApexCharts from 'vue3-apexcharts'
+import 'bootstrap/dist/css/bootstrap.min.css'
 
-createApp(App).use(router).mount('#app')
->>>>>>> 988e5d76501a038c36552744bee0f731345d9c5b
+const app = createApp(App)
+app.use(router)
+app.use(VueApexCharts)
+app.mount('#app')

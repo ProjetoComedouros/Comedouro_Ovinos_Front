@@ -10,7 +10,9 @@
         <li class="nav-item me-3"><a class="nav-link" href="#">Casos</a></li>
         <li class="nav-item me-3"><a class="nav-link" href="#">Suporte</a></li>
         <li class="nav-item">
-          <a class="nav-link btn btn-sm btn-outline-success" href="/Login.html">Área do Cliente</a>
+          <router-link to="/login" class="nav-link btn btn-sm btn-outline-success">
+            Entrar
+          </router-link>
         </li>
       </ul>
     </div>
