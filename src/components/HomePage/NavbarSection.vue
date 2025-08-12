@@ -1,19 +1,15 @@
 <template>
   <nav class="navbar navbar-expand bg-white shadow-sm">
     <div class="container">
-      <a class="navbar-brand d-flex align-items-center" href="#">
+      <router-link class="navbar-brand d-flex align-items-center" to="/home">
         <img class="logo" src="@/assets/HomeImages/logo.jpg" alt="LogoNATA" />
-      </a>
+      </router-link>
       <ul class="navbar-nav ms-auto flex-row align-items-center">
-        <li class="nav-item me-3"><a class="nav-link" href="#">Home</a></li>
-        <li class="nav-item me-3"><a class="nav-link" href="#">Produtos</a></li>
-        <li class="nav-item me-3"><a class="nav-link" href="#">Casos</a></li>
-        <li class="nav-item me-3"><a class="nav-link" href="#">Suporte</a></li>
-        <li class="nav-item">
-          <router-link to="/login" class="nav-link btn btn-sm btn-outline-success">
-            Entrar
-          </router-link>
-        </li>
+        <li class="nav-item me-3"><router-link class="nav-link" to="#sobre">Sobre</router-link></li>
+        <li class="nav-item me-3"><router-link class="nav-link" to="#beneficios">Benefícios</router-link></li>
+        <li class="nav-item me-3"><router-link class="nav-link" to="#quem-somos">Quem somos</router-link></li>
+        <li class="nav-item me-3"><router-link class="nav-link" to="#">Suporte</router-link></li>
+        <li class="nav-item"><router-link to="/login" class="nav-link btn btn-sm btn-outline-success">Entrar</router-link></li>
       </ul>
     </div>
   </nav>

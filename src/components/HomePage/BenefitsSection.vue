@@ -1,18 +1,21 @@
 <template>
-  <section id="produtos" class="py-5 bg-light">
-    <div class="container">
-      <h2 class="text-center mb-4">Nossos Produtos</h2>
-      <div class="row">
-        <FeatureCard
-          v-for="(produto, index) in produtos"
-          :key="index"
-          :titulo="produto.titulo"
-          :descricao="produto.descricao"
-          :imagem="produto.imagem"
-        />
+
+  <br>
+    <section id="beneficios" class="py-5">
+      <div class="container">
+        <div class="row g-4">
+          <FeatureCard
+            v-for="(f, i) in features"
+            :key="i"
+            :icon="f.icon"
+            :title="f.title"
+            :text="f.text"
+          />
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
+<br>
+
 </template>
 
 <script>

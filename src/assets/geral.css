@@ -1,12 +1,16 @@
-body {
-      font-family: 'Segoe UI', sans-serif;
+:root {
+      --color-primary: #20913C;
+      --color-dark:    #0F4C22;
+      --font-heading:  'Montserrat', sans-serif;
+      --font-body:     'Open Sans', sans-serif;
     }
-    
-    .carousel-item {
-      height: 70vh;
-      background-size: cover;
-      background-position: center;
+    body {
+      font-family: var(--font-body);
+      color: #333;
+      line-height: 1.6;
     }
-    .cards-section h5 { font-weight: 600; }
-    .cards-section a { color: #2A8F36; text-decoration: none; }
-    .cards-section a:hover { text-decoration: underline; }
+    h1,h2,h3,h4,h5,h6 {
+      font-family: var(--font-heading);
+      color: var(--color-dark);
+    }
+    a { text-decoration: none; }

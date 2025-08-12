@@ -10,6 +10,14 @@
   </div>
 </template>
 
+
+<style scoped>
+.feature-card i {
+      font-size: 2.5rem;
+      color: var(--color-primary);
+    } 
+</style>
+
 <script>
 export default {
   props: ['icon', 'title', 'text']
