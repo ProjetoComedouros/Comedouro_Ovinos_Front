@@ -1,5 +1,13 @@
 <template>
+  
+
   <footer class="site-footer bg-light pt-5">
+    <section id="footer">
+      <div class="container text-center mb-5">
+        <h2 class="fw-bold" style="font-family: var(--font-heading);">Fale conosco!</h2>
+    
+      </div>
+    </section>
     <div class="container">
 
       
@@ -7,14 +15,17 @@
       <!-- 2) Seção de contato -->
       <div class="row align-items-start mb-5">
         <div class="col-md-6 mb-4">
-          <h4>Entre em contato conosco</h4>
+          <h4>Entre em contato</h4>
           <p>Para dúvidas, ou mais informações, preencha o formulário ao lado ou fale conosco nas redes sociais.</p>
           <div class="mt-3">
             <a href="#" class="text-success me-3"><i class="bi bi-facebook fs-2"></i></a>
             <a href="#" class="text-success me-3"><i class="bi bi-twitter fs-2"></i></a>
             <a href="#" class="text-success me-3"><i class="bi bi-linkedin fs-2"></i></a>
             <a href="#" class="text-success me-3"><i class="bi bi-whatsapp fs-2"></i></a>
-            <a href="#" class="text-success"><i class="bi bi-instagram fs-2"></i></a>
+            <a href="#" class="text-success me-3"><i class="bi bi-instagram fs-2"></i></a>
+            <a href="#" class="text-success me-3"><i class="bi bi-telegram fs-2"></i></a>
+        
+          
           </div>
         </div>
         <div class="col-md-6">

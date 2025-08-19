@@ -4,7 +4,7 @@
     <div class="card-body">
       <h5 class="card-title">{{ nome }}</h5>
       <p class="text-muted">{{ funcao }}</p>
-      <p class="card-text text-muted small">Saiba Mais</p>
+       <p class="card-text text-muted small" @click="mostrarTexto">Saiba Mais</p>
     </div>
   </div>
 </template>

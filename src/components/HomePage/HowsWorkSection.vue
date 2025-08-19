@@ -26,7 +26,7 @@
                 <h5 class="card-title">Problemática</h5>
                 <p class="card-text text-muted">
                   A pecuária moderna demanda cada vez mais eficiência e sustentabilidade. 
-      Produtores enfrentam desafios diários para balancear custos de ração, garantir o bem-estar 
+      Produtores enfrentam desafios diários para gerenciar custos, garantir produtividade, o bem-estar 
       animal e ainda obter relatórios confiáveis para tomada de decisão.
                 </p>
               </div>
@@ -53,7 +53,7 @@
                 <p class="card-text text-muted">
                   Desenvolvemos comedouros automáticos equipados com sensores inteligentes e software de análise, 
       que permitem dosagem precisa, monitoramento remoto e relatórios em tempo real. 
-      Tudo isso para que você economize até 30% de ração e tenha dados confiáveis para otimizar seu rebanho.
+      Tudo isso para que você economize e tenha dados confiáveis para otimizar seu rebanho.
                 </p>
               </div>
             </div>

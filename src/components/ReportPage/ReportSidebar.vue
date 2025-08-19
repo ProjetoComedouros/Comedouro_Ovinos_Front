@@ -1,7 +1,7 @@
 <template>
   <div class="sidebar">
     <router-link to="/report" class="fw-bold">Relatórios</router-link>
-    <router-link to="/animalregister">Cadastrar Ovelha</router-link>
+    <router-link to="/animalregister">Cadastro de Animais</router-link>
     <router-link to="#">Perfis de Usuários</router-link>
   </div>
 </template>

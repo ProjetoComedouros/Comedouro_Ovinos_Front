@@ -8,7 +8,7 @@
         <li class="nav-item me-3"><router-link class="nav-link" to="#sobre">Sobre</router-link></li>
         <li class="nav-item me-3"><router-link class="nav-link" to="#beneficios">Benefícios</router-link></li>
         <li class="nav-item me-3"><router-link class="nav-link" to="#quem-somos">Quem somos</router-link></li>
-        <li class="nav-item me-3"><router-link class="nav-link" to="#">Suporte</router-link></li>
+        <li class="nav-item me-3"><router-link class="nav-link" to="#footer">Suporte</router-link></li>
         <li class="nav-item"><router-link to="/login" class="nav-link btn btn-sm btn-outline-success">Entrar</router-link></li>
       </ul>
     </div>
