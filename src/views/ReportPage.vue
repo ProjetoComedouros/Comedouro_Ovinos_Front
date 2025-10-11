@@ -11,72 +11,88 @@
       <section class="dash">
         <h5 class="mb-3">Análise gráfica</h5>
 
+  
+
+
         <div class="toolbar">
           <div class="seg">
             <button :class="{active: modo==='animal'}" @click="modo='animal'">Animal</button>
             <button :class="{active: modo==='lote'}"   @click="modo='lote'">Lote</button>
             <button :class="{active: modo==='geral'}"  @click="modo='geral'">Geral</button>
           </div>
+          
 
           <div v-if="modo==='animal'">
             <label>ID do Animal:
-              <input v-model="animalId" placeholder="ex: 01" />
+              <input v-model="animalId" placeholder="ex: 01" 
+              @input="modo='animal'" 
+              />
             </label>
           </div>
 
           <div v-if="modo==='lote'">
             <label>ID do Lote:
-              <input v-model="loteId" placeholder="ex: A" />
+              <input v-model="loteId" placeholder="ex: A"
+              @input="modo='lote'" />
             </label>
           </div>
 
+
+          
+      
+          
           <div class="seg">
             <span style="margin-right:8px;">Mostrar:</span>
             <button :class="{active: grafSelecionado==='todos'}"        @click="grafSelecionado='todos'">Todos</button>
             <button :class="{active: grafSelecionado==='ingestivo'}"    @click="grafSelecionado='ingestivo'">Comp. Ingestivo</button>
             <button :class="{active: grafSelecionado==='desempenho'}"   @click="grafSelecionado='desempenho'">Desempenho</button>
             <button :class="{active: grafSelecionado==='viabilidade'}"  @click="grafSelecionado='viabilidade'">Viabilidade</button>
+          
           </div>
         </div>
 
         <div v-if="selecionadoPonto" class="info">
           <strong>Selecionado:</strong>
           ID {{ selecionadoPonto.id }} | Lote {{ selecionadoPonto.lote }} | x: {{ selecionadoPonto.x }} | y: {{ selecionadoPonto.y }}
+
         </div>
+        <p v-if="mensagemErro" class="text-red-600 font-bold mt-2">
+          {{ mensagemErro }}
+           </p>
 
         <div class="grid">
-          <ScatterBubbles
-            v-if="grafSelecionado==='todos' || grafSelecionado==='ingestivo'"
-            title="Comportamento Ingestivo"
-            :pontos="fonte.ingestivo"
-            x-label="Presença no comedouro"
-            y-label="Horas"
-            color="#f59e0b"
-            :highlight-id="selecionadoPonto?.id"
-            @point-click="onPointClick"
-          />
 
-          <ScatterBubbles
-            v-if="grafSelecionado==='todos' || grafSelecionado==='desempenho'"
-            title="Desempenho"
-            :pontos="fonte.desempenho"
-            x-label="Peso Vivo (kg)"
-            y-label="Custo/dia (R$)"
-            color="#16a34a"
-            :highlight-id="selecionadoPonto?.id"
-            @point-click="onPointClick"
-          />
 
-          <ScatterBubbles
-            v-if="grafSelecionado==='todos' || grafSelecionado==='viabilidade'"
-            title="Viabilidade"
-            :pontos="fonte.viabilidade"
-            x-label="Dias"
-            y-label="Índice"
-            color="#2563eb"
-            :highlight-id="selecionadoPonto?.id"
+
+          <IngestivoCharts
+            :pontos="fonte"
+            :graf-selecionado="grafSelecionado"
+            :highlight-id="highlightId"
+            :minutes-to-time="minutesToTime"
+            :format-date="formatDate"
             @point-click="onPointClick"
           />
+          
+
+          <DesempenhoCharts
+            :pontos="fonte"
+            :graf-selecionado="grafSelecionado"
+            :highlight-id="highlightId"
+            :format-date="formatDate"
+            :format-kg="formatKg"
+            @point-click="onPointClick"
+          />
+          
+          <ViabilidadeCharts
+            :pontos="fonte"
+            :graf-selecionado="grafSelecionado"
+            :highlight-id="highlightId"
+            :format-date="formatDate"
+            :format-kg="formatKg"
+            :format-reais="formatReais"
+            @point-click="onPointClick"
+          />
+          
         </div>
       </section>
       
@@ -101,84 +117,126 @@ import Navbar from '@/components/ReportPage/ReportNavbar.vue'
 import Sidebar from '@/components/ReportPage/ReportSidebar.vue'
 import ReportHeader from '@/components/ReportPage/ReportHeader.vue'
 import AnimalCard from '@/components/ReportPage/AnimalCard.vue'
-import ScatterBubbles from '@/components/ScatterBubbles.vue'
+
+import IngestivoCharts from '@/components/charts/IngestivoCharts.vue'
+import DesempenhoCharts from '@/components/charts/DesempenhoCharts.vue'
+import ViabilidadeCharts from '@/components/charts/ViabilidadeCharts.vue'
+
+import { DATA } from '@/data/mock.js'  // futuramente trocamos pelo axios
+
+
+const minutesToTime = (mins) => {
+  const h = String(Math.floor(mins / 60)).padStart(2, '0')
+  const m = String(Math.round(mins % 60)).padStart(2, '0')
+  return `${h}:${m}`
+}
+
+// Formatter para datas no formato dd/MM/yyyy
+const formatDate = (date) => {
+  // Se já for string, tenta converter normalmente
+  if (typeof date === 'string') {
+    const d = new Date(date)
+    if (isNaN(d)) return date
+    return d.toLocaleDateString('pt-BR')
+  }
+  // Se for número (timestamp), converte também
+  if (typeof date === 'number') {
+    const d = new Date(date)
+    if (isNaN(d)) return date
+    return d.toLocaleDateString('pt-BR')
+  }
+  return ''
+}
+
+const formatKg = (value) => `${value} kg`
+
+const formatReais = (value) => {
+  // Formata como moeda brasileira
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
 
 const selecionado = ref(false)
 
-// ====== DADOS EXEMPLO (troque pelo backend quando tiver) ======
-const DATA = {
-  lotes: {
-    A: {
-      ingestivo: [
-        { id:'01', lote:'A', x:1, y:0.16, r:6 },
-        { id:'02', lote:'A', x:2, y:0.30, r:7 },
-        { id:'03', lote:'A', x:3, y:0.36, r:6 },
-        { id:'04', lote:'A', x:4, y:0.43, r:5 },
-      ],
-      desempenho: [
-        { id:'01', lote:'A', x:41.0, y:0.54, r:8 },
-        { id:'02', lote:'A', x:42.1, y:0.60, r:9 },
-        { id:'03', lote:'A', x:43.1, y:0.68, r:7 }
-      ],
-      viabilidade: [
-        { id:'01', lote:'A', x:6, y:1.18, r:7 },
-        { id:'02', lote:'A', x:7, y:1.22, r:6 },
-        { id:'03', lote:'A', x:8, y:1.25, r:6 }
-      ]
-    }
-  },
-  animais: {
-    '01': {
-      ingestivo: [
-        { id:'01', lote:'A', x:1, y:0.16, r:6 },
-        { id:'01', lote:'A', x:2, y:0.25, r:6 },
-        { id:'01', lote:'A', x:3, y:0.33, r:6 },
-        { id:'01', lote:'A', x:4, y:0.40, r:6 }
-      ],
-      desempenho: [
-        { id:'01', lote:'A', x:35, y:0.0, r:6 },
-        { id:'01', lote:'A', x:41, y:0.54, r:8 }
-      ],
-      viabilidade: [
-        { id:'01', lote:'A', x:6, y:1.18, r:7 },
-        { id:'01', lote:'A', x:7, y:1.22, r:7 }
-      ]
-    }
-  },
-  geral: {
-    ingestivo: [
-      { id:'A-01', lote:'A', x:1, y:0.18, r:6 },
-      { id:'A-02', lote:'A', x:2, y:0.30, r:7 }
-    ],
-    desempenho: [
-      { id:'A-01', lote:'A', x:41, y:0.54, r:8 }
-    ],
-    viabilidade: [
-      { id:'A-01', lote:'A', x:6, y:1.18, r:7 }
-    ]
-  }
-}
+
 
 // ====== CONTROLES DA SEÇÃO ======
-const modo = ref('lote')                 // 'animal' | 'lote' | 'geral'
+const modo = ref('animal')                 // 'animal' | 'lote' | 'geral'
 const animalId = ref('')
 const loteId = ref('A')
 const grafSelecionado = ref('todos')     // 'todos' | 'ingestivo' | 'desempenho' | 'viabilidade'
 
+const mensagemErro = ref('')
+
+
 const fonte = computed(() => {
-  if (modo.value === 'animal' && animalId.value) {
-    return DATA.animais[animalId.value] ?? { ingestivo: [], desempenho: [], viabilidade: [] }
+  const emptySource = { ingestivo: [], desempenho: [], viabilidade: [], custo: [], evolucaocusto: [], EvolucaoPVPeriodo: [], EvolucaoPVDia: [], EvolucaoGMD: [], EvolucaoGanho: [], horaEntrada: [], horaSaida: [], minRefeicao: [], consumoDiario: [], ganhopordia: [] };
+
+  // Quando o modo for 'animal' ou 'lote', a fonte de dados será sempre o lote selecionado.
+  // A filtragem visual será feita pelo highlight, não aqui.
+  if (modo.value === 'animal' || modo.value === 'lote') {
+    return DATA.lotes[loteId.value] ?? emptySource;
   }
-  if (modo.value === 'lote' && loteId.value) {
-    return DATA.lotes[loteId.value] ?? { ingestivo: [], desempenho: [], viabilidade: [] }
+
+  // Se o modo for 'geral', retorna os dados gerais
+  if (modo.value === 'geral') {
+    return DATA.geral;
   }
-  return DATA.geral
+
+  return emptySource;
+});
+
+import { watch } from 'vue'
+
+watch(animalId, (novoId) => {
+  if (modo.value === 'animal') {
+    if (!novoId) {                // vazio → sem erro
+      mensagemErro.value = ''
+      return
+    }
+    const lote = DATA.lotes[loteId.value]
+    if (!lote) {
+      mensagemErro.value = `⚠️ Nenhum lote com ID "${loteId.value}" encontrado.`
+      return
+    }
+    const existeNoLote = Object.values(lote).some((arr) =>
+      (arr ?? []).some(item => item.id === novoId)
+    )
+    mensagemErro.value = existeNoLote
+      ? ''
+      : `⚠️ O animal "${novoId}" não foi encontrado no lote "${loteId.value}".`
+  }
 })
+
+watch(loteId, (novoId) => {
+  if (modo.value === 'lote') {
+    if (!novoId || !DATA.lotes[novoId]) {
+      mensagemErro.value = novoId ? `⚠️ Nenhum lote com ID "${novoId}" encontrado.` : ''
+    } else {
+      mensagemErro.value = ''
+    }
+  }
+})
+
+
 
 const selecionadoPonto = ref(null)
 const onPointClick = (p) => { selecionadoPonto.value = p }
 
-// ====== DADOS DA TABELA ======
+// Esta computed property decide qual ID deve ser destacado no gráfico.
+const highlightId = computed(() => {
+  // Se um ponto foi clicado, ele tem prioridade.
+  if (selecionadoPonto.value) {
+    return selecionadoPonto.value.id;
+  }
+  // Se estiver no modo 'animal' e um ID foi digitado, use esse ID.
+  if (modo.value === 'animal' && animalId.value) {
+    return animalId.value;
+  }
+  // Caso contrário, nenhum ponto deve ser destacado.
+  return null;
+});
+
+// ====== DADOS DA TABELA ====== //NAO USAMOS MAIS ESSE
 const animais = ref([
   { id: 'ovelha1', nome: 'Ovelha 01', digestivo: 'OK',  desempenho: 'Alta',  viabilidade: 'Viável'   },
   { id: 'ovelha2', nome: 'Ovelha 02', digestivo: 'OK',  desempenho: 'Baixa', viabilidade: 'Inviável' },
@@ -211,4 +269,4 @@ input{padding:8px 10px;border:1px solid #ddd;border-radius:8px}
 
 /* tabela (seu estilo original) */
 .table-placeholder { background-color:#ffffff; border:1px solid #dee2e6; padding:1rem; border-radius:8px; margin-top: 1rem; }
-</style>
+</style>  

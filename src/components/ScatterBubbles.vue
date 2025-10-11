@@ -2,6 +2,7 @@
 /* global defineProps, defineEmits */
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { Chart } from 'chart.js/auto'
+import 'chartjs-adapter-date-fns'
 
 const props = defineProps({
   title: { type: String, default: '' },
@@ -9,57 +10,75 @@ const props = defineProps({
   xLabel: { type: String, default: 'Eixo X' },
   yLabel: { type: String, default: 'Eixo Y' },
   color:  { type: String, default: '#2563eb' },
-  highlightId: { type: [String, Number], default: null }
+  highlightId: { type: [String, Number], default: null },
+  xFormatter: { type: Function, default: v => v }, // ADICIONADO
+  yFormatter: { type: Function, default: v => v },
+  xType: {type:String, default: 'linear'},
+  chartType: { type: String, default: 'scatter' } // 'scatter' ou 'bubble-line'
 })
 const emit = defineEmits(['point-click'])
 
 const canvasRef = ref(null)
 let chart
 
+import 'chartjs-adapter-date-fns'
+
 const build = () => {
   if (chart) chart.destroy()
 
   chart = new Chart(canvasRef.value, {
-    type: 'bubble',
+    type: props.chartType === 'line' ? 'line' : 'scatter',
     data: {
       datasets: [{
-        label: props.title || 'Dispersão',
-        data: props.pontos.map(p => ({ ...p, x: p.x, y: p.y, r: p.r ?? 6 })),
-        parsing: false,
-        backgroundColor: (ctx) => {
-          const raw = ctx.raw
-          const sel = props.highlightId != null && raw?.id === props.highlightId
-          return sel ? 'rgba(234,88,12,0.9)' : props.color + 'cc'
-        },
-        borderColor: (ctx) => {
-          const raw = ctx.raw
-          const sel = props.highlightId != null && raw?.id === props.highlightId
-          return sel ? '#ea580c' : props.color
-        },
-        borderWidth: 1
+        label: props.title || 'Evolução',
+        data: Array.isArray(props.pontos)
+      ? props.pontos.map(p => ({ x: p.x, y: p.y, r: p.r ?? 5 }))
+      : [],
+        borderColor: props.color,
+        backgroundColor: props.color,
+        fill: false,
+        tension: 0.3,
+        pointRadius: props.chartType === 'scatter' || props.chartType === 'bubble-line' ? 5 : 0,
+        showLine: props.chartType === 'bubble-line' || props.chartType === 'line'
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      paring: true,
       scales: {
-        x: { title: { display: true, text: props.xLabel }, grid: { color: '#efefef' } },
-        y: { title: { display: true, text: props.yLabel }, grid: { color: '#efefef' } }
+        x: { 
+          title: { display: true, text: props.xLabel },
+          grid: { color: '#efefef' },
+          type: props.xType, // 'linear' ou 'time'
+          
+          time: {
+            unit:'day',
+            tooltipFormat: 'dd/MM/yyyy',
+            displayFormats: {
+              day: 'dd/MM/yyyy'
+            }
+          },
+          ticks: {
+            callback: value => props.xFormatter(value) //formata x
+          }  
+        },
+        y: { 
+          title: { display: true, text: props.yLabel },
+          grid: { color: '#efefef' },
+          ticks:{
+            callback: value => props.yFormatter(value) //formata y
+          }
+        }
       },
       plugins: {
         legend: { display: false },
         tooltip: {
           callbacks: {
             label: (ctx) => {
+             
               const p = ctx.raw
-              const linhas = [
-                `Animal: ${p?.id ?? '—'}`,
-                p?.nome ? `Nome: ${p.nome}` : null,
-                p?.lote ? `Lote: ${p.lote}` : null,
-                `${props.xLabel}: ${p.x}`,
-                `${props.yLabel}: ${p.y}`
-              ].filter(Boolean)
-              return linhas
+              return `${props.xLabel}: ${props.xFormatter(p.x)}, ${props.yLabel}: ${props.yFormatter(p.y)}`
             }
           }
         },
@@ -75,6 +94,7 @@ const build = () => {
     }
   })
 }
+
 
 onMounted(build)
 onBeforeUnmount(() => chart?.destroy())

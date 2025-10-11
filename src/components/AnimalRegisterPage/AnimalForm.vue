@@ -105,8 +105,8 @@
 </template>
 
 <script>
-import "vue3-select/dist/vue3-select.css";
-import vSelect from "vue3-select";
+import vSelect from 'vue-select'   
+import 'vue-select/dist/vue-select.css'  
 
 export default {
   name: "AnimalForm",

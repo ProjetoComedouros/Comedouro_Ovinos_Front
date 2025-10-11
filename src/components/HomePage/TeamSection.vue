@@ -29,16 +29,16 @@ export default {
   data() {
     return {
       membros: [
-        { name: 'Rafael Sanches Venturini', role: 'Coordenador', img: 'assets/img/team1.jpg' },
-        { name: 'Fernando Mariano Bayer', role: 'Coordenador-adjunto', img: 'assets/img/team2.jpg' },
-        { name: 'Leandro Roggia', role: 'Coordenador-adjunto', img: 'assets/img/team3.jpg' },
-        { name: 'Luciano Retzlaff', role: 'Coordenador-adjunto', img: 'assets/img/team3.jpg' },
-        { name: 'Renato Preigschadt de Azevedo', role: 'Coordenador-adjunto', img: 'assets/img/team3.jpg' },
-        { name: 'Arthur Montero Portella', role: 'Coordenador-adjunto', img: 'assets/img/team3.jpg' },
-        { name: 'Eduarda Padilha Zorzo', role: 'Coordenador-adjunto', img: 'assets/img/team3.jpg' },
-        { name: 'Henrique De Barros Da Silva', role: 'Coordenador-adjunto', img: 'assets/img/team3.jpg' },
-        { name: 'Victor Couto Cardoso', role: 'Coordenador-adjunto', img: 'assets/img/team3.jpg' },
-        { name: 'Lucas de Quadros', role: 'Coordenador-adjunto', img: 'assets/img/team3.jpg' },
+        { name: 'Rafael Sanches Venturini', role: 'Zootecnista, Dr., Professor do Departamento de Ensino, Colégio Politécnico da Universidade Federal de Santa Maria - UFSM/POLI ', img: 'assets/img/team1.jpg' },
+        { name: 'Fernando Mariano Bayer', role: 'Engenheiro Mecânico, Dr., Professor do Departamento de Ensino, Colégio Técnico Industrial de Santa Maria - UFSM/CTISM', img: 'assets/img/team2.jpg' },
+        { name: 'Leandro Roggia', role: 'Engenheiro Eletricista, Dr., Professor do Departamento de Ensino, Colégio Técnico Industrial de Santa Maria - UFSM/CTISM.', img: 'assets/img/team3.jpg' },
+        { name: 'Luciano Retzlaff', role: 'Engenheiro Eletricista, Dr., Professor do Departamento de Ensino, Colégio Técnico Industrial de Santa Maria - UFSM/CTISM.', img: 'assets/img/team3.jpg' },
+        { name: 'Renato Preigschadt de Azevedo', role: 'Ciência da Computação, Dr., Professor do Departamento de Ensino, Colégio Técnico Industrial de Santa Maria - UFSM/CTISM. ', img: 'assets/img/team3.jpg' },
+        { name: 'Arthur Montero Portella', role: 'Discente do curso de Engenharia da Computação, Universidade Federal de Santa Maria, UFSM, Brasil.  - UFSM. Av. Roraima, 1000 - Camobi, Santa Maria - RS, 97105-000', img: 'assets/img/team3.jpg' },
+        { name: 'Eduarda Padilha Zorzo', role: 'Discente do curso de Sistemas para a Internet, Colégio Politécnico da Universidade Federal de Santa Maria - UFSM/POLI. Av. Roraima, 1000 - Camobi, Santa Maria - RS, 97105-000', img: 'assets/img/team3.jpg' },
+        { name: 'Lucas de Quadros', role: 'Discente do curso de Tecnologia em Redes de Computadores, Universidade Federal de Santa Maria, UFSM, Brasil. - UFSM/POLI. Av. Roraima, 1000 - Camobi, Santa Maria - RS, 97105-000', img: 'assets/img/team3.jpg' },
+        { name: 'Victor Couto Cardoso', role: 'Discente do curso de Tecnologia em Fabricação Mecânica, Universidade Federal de Santa Maria, UFSM, Brasil - UFSM/POLI. Av. Roraima, 1000 - Camobi, Santa Maria - RS, 97105-000', img: 'assets/img/team3.jpg' },
+        {name: 'Henrique De Barros Da Silva', role: 'Discente do curso de Tecnologia em Eletrônica Industrial, Universidade Federal de Santa Maria, UFSM, Brasil - UFSM/POLI. Av. Roraima, 1000 - Camobi, Santa Maria - RS, 97105-000', img: 'assets/img/team3.jpg' },
       ]
     }
   }

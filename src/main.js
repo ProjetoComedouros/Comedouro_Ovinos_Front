@@ -1,10 +1,10 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
-import VueApexCharts from 'vue3-apexcharts'
-import 'bootstrap/dist/css/bootstrap.min.css'
 
-const app = createApp(App)
-app.use(router)
-app.use(VueApexCharts)
-app.mount('#app')
+import vSelect from 'vue-select'            
+import 'vue-select/dist/vue-select.css'  
+createApp(App)
+  .component("v-select", vSelect)
+  .use(router)
+  .mount("#app")

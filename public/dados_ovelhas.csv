@@ -1,0 +1,4 @@
+id,nome,peso_kg,idade_meses,data_registro,comp_digestivo,desempenho,viabilidade
+ovelha1,Ovelha 001,45,24,2023-04-15,OK,Alta,Viável
+ovelha2,Ovelha 002,47,18,2023-05-10,OK,Baixa,Inviável
+ovelha3,Ovelha 003,50,36,2023-01-20,OK,Baixa,Inviável
