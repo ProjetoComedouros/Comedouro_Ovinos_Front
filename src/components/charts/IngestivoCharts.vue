@@ -1,12 +1,12 @@
 <template>
   <ScatterBubbles
     v-if="grafSelecionado === 'todos' || grafSelecionado === 'ingestivo'"
-    title="Comportamento Ingestivo"
+    title="Duração da Refeição"
     :pontos="pontos.ingestivo"
-    x-label="Presença no comedouro"
-    y-label="Horas"
+    x-label="Refeição (Nº)"
+    y-label="Duração (min)"
     color="#f59e0b"
-    :highlight-id="highlightId"
+    :highlight-id="props.highlightId"
     :x-formatter="(v) => v"
     :y-formatter="minutesToTime"
     chart-type="scatter"
@@ -15,10 +15,10 @@
   />
 
   <ScatterBubbles
-    v-if="grafSelecionado === 'animal' || grafSelecionado === 'ingestivo'"
+    v-if="grafSelecionado === 'todos' || grafSelecionado === 'ingestivo'"
     title="Hora Entrada"
     :pontos="pontos.horaEntrada"
-    x-label="Presença no comedouro"
+    x-label="Refeição (Nº)"
     y-label="Hora"
     color="orange"
     :highlight-id="highlightId"
@@ -29,10 +29,10 @@
   />
 
   <ScatterBubbles
-    v-if="grafSelecionado === 'animal' || grafSelecionado === 'todos'"
+    v-if="grafSelecionado === 'todos' || grafSelecionado === 'ingestivo'"
     title="Hora Entrada (Linha)"
     :pontos="pontos.horaEntrada"
-    x-label="Presença no comedouro"
+    x-label="Refeição (Nº)"
     y-label="Hora"
     color="orange"
     :highlight-id="highlightId"
@@ -44,10 +44,10 @@
   />
 
   <ScatterBubbles
-    v-if="grafSelecionado === 'todos' || grafSelecionado === 'horaSaida'"
+    v-if="grafSelecionado === 'todos' || grafSelecionado === 'ingestivo'"
     title="Hora Saída"
     :pontos="pontos.horaSaida"
-    x-label="Presença no comedouro"
+    x-label="Refeição (Nº)"
     y-label="Hora"
     color="green"
     :highlight-id="highlightId"
@@ -58,10 +58,10 @@
   />
 
   <ScatterBubbles
-    v-if="grafSelecionado === 'animal' || grafSelecionado === 'ingestivo' || grafSelecionado === 'todos' || grafSelecionado === 'minRefeicao'"
+    v-if="grafSelecionado === 'todos' || grafSelecionado === 'ingestivo'"
     title="Min/Refeição"
     :pontos="pontos.minRefeicao"
-    x-label="Presença no comedouro"
+    x-label="Data"
     y-label="Minutos"
     color="blue"
     :highlight-id="highlightId"
@@ -72,7 +72,7 @@
   />
 
   <ScatterBubbles
-    v-if="grafSelecionado === 'animal' || grafSelecionado === 'ingestivo' || grafSelecionado === 'todos' || grafSelecionado === 'consumoDiario'"
+    v-if="grafSelecionado === 'todos' || grafSelecionado === 'ingestivo'"
     title="Consumo Diário"
     :pontos="pontos.consumoDiario"
     x-label="Data"
@@ -90,14 +90,19 @@
 /* global defineProps, defineEmits */
 import ScatterBubbles from '@/components/ScatterBubbles.vue'
 
-defineProps({
-  pontos: { type: Object, required: true },
-  grafSelecionado: { type: String, required: true },
-  highlightId: { type: [String, Number], default: null },
-  minutesToTime: { type: Function, required: true },
-  formatDate: { type: Function, required: true },
+const props = defineProps({
+    // Agora a prop 'pontos' é a única fonte de dados para os gráficos.
+    pontos: { type: Object, required: true },
+    grafSelecionado: { type: String, required: true },
+    highlightId: { type: [String, Number], default: null },
+    minutesToTime: { type: Function, required: true },
+    formatDate: { type: Function, required: true },
 })
-
 const emit = defineEmits(['point-click'])
 const onPointClick = (p) => emit('point-click', p)
+
+
+// Toda a lógica de fetch (onMounted, fetchComportamento, dadosApi, etc.) foi removida.
+// O componente agora é "burro" e apenas renderiza os dados recebidos via props.
+// Isso corrige o problema e torna o componente reutilizável e reativo às mudanças do pai.
 </script>

@@ -61,6 +61,10 @@
 import ScatterBubbles from '@/components/ScatterBubbles.vue'
 
 defineProps({
+  desempenho: { 
+        type: [String, Object, null], // Permite String ou Object ou null
+        default: null 
+    },
   pontos: { type: Object, required: true },
   grafSelecionado: { type: String, required: true },
   highlightId: { type: [String, Number], default: null },

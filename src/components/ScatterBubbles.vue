@@ -5,13 +5,15 @@ import { Chart } from 'chart.js/auto'
 import 'chartjs-adapter-date-fns'
 
 const props = defineProps({
+
+  
   title: { type: String, default: '' },
   pontos: { type: Array, default: () => [] }, // [{x,y,r?, id, nome?, lote?, ...}]
   xLabel: { type: String, default: 'Eixo X' },
   yLabel: { type: String, default: 'Eixo Y' },
   color:  { type: String, default: '#2563eb' },
   highlightId: { type: [String, Number], default: null },
-  xFormatter: { type: Function, default: v => v }, // ADICIONADO
+  xFormatter: { type: Function, default: v => v }, //adicionei
   yFormatter: { type: Function, default: v => v },
   xType: {type:String, default: 'linear'},
   chartType: { type: String, default: 'scatter' } // 'scatter' ou 'bubble-line'
