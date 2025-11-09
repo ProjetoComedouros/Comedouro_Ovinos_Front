@@ -28,11 +28,11 @@ export async function getConsumoDiario(tipo, id, data = null) {
     }
     
     // Constrói a URL base
-    let url = `/consumo-diario/${tipo}/${id}/`;
+    let url = `consumo-diario/${tipo}/${id}/`;
     
     // Adiciona a data à URL se fornecida
     if (data) {
-        url += `${data}/`;
+        url += `/${data}/`;
     }
 
     try {
@@ -66,18 +66,19 @@ export async function getMinutoPorRefeicao(tipo, id, data = null) {
     }
     
     // Constrói a URL base
-    let url = `/minuto-por-refeicao/${tipo}/${id}/`;
+    let url = `minuto-por-refeicao/${tipo}/${id}`;
     
     // Adiciona a data à URL se fornecida
     if (data) {
-        url += `${data}/`;
+        url += `/${data}/`;
     }
-
+    console.log(`[API ROTA] Min/Refeição URL: ${url}`);
     try {
         const response = await api.get(url);
+        console.log(`[API SUCESSO] Min/Refeição Dados Brutos:`, response.data); // ⬅️ NOVO LOG DE SUCESSO
         return response.data;
     } catch (error) {
-        console.error("Erro ao buscar Minuto Por Refeição:", error.response || error);
+        console.error(`[API ERRO] Min/Refeição Falhou para ${tipo}/${id}:`, error.response?.status, error.response?.data);
         throw error;
     }
 }

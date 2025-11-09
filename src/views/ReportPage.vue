@@ -22,7 +22,6 @@
           </div>
 
 
-
           <!-- Campo para ANIMAL -->
           <div v-if="modo === 'animal'" class="input-group">
             <div class="input-item">
@@ -46,7 +45,8 @@
             </label>
           </div>
 
-          <!-- Botões de tipo de gráfico -->
+
+
           <div class="seg">
             <span style="margin-right:8px;">Mostrar:</span>
             <button :class="{ active: grafSelecionado === 'todos' }" @click="grafSelecionado = 'todos'">Todos</button>
@@ -56,14 +56,23 @@
               @click="grafSelecionado = 'desempenho'">Desempenho</button>
             <button :class="{ active: grafSelecionado === 'viabilidade' }"
               @click="grafSelecionado = 'viabilidade'">Viabilidade</button>
+
           </div>
         </div>
-
-
         <div v-if="selecionadoPonto" class="info">
-          <strong>Selecionado:</strong>
-          ID {{ selecionadoPonto?.id }} | Lote {{ selecionadoPonto?.lote }} | x: {{ selecionadoPonto?.x }} | y: {{
-            selecionadoPonto?.y }}
+          <template v-if="selecionadoPonto">
+            <p>
+              <strong>Selecionado:</strong>
+
+              ID {{ animalId || selecionadoPonto.id }}
+
+              | Lote {{ selecionadoPonto.lote || loteId }}
+
+              | Data/Ref: {{ formatDate(selecionadoPonto.x) }}
+
+              | {{ selecionadoPonto.y_unit || 'Valor' }}: {{ formatSelectedY(selecionadoPonto) }}
+            </p>
+          </template>
         </div>
         <p v-if="mensagemErro" class="text-red-600 font-bold mt-2">
           {{ mensagemErro }}
@@ -78,7 +87,8 @@
 
 
           <DesempenhoCharts :pontos="fonte" :graf-selecionado="grafSelecionado" :highlight-id="highlightId"
-            :format-date="formatDate" :format-kg="formatKg" @point-click="onPointClick" />
+            :tipo-alvo="modo" :id-alvo="animalId" :format-date="formatDate" :format-kg="formatKg"
+            @point-click="onPointClick" />
 
           <ViabilidadeCharts :pontos="fonte" :graf-selecionado="grafSelecionado" :highlight-id="highlightId"
             :format-date="formatDate" :format-kg="formatKg" :format-reais="formatReais" @point-click="onPointClick" />
@@ -94,7 +104,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import Navbar from '@/components/ReportPage/ReportNavbar.vue'
 import Sidebar from '@/components/ReportPage/ReportSidebar.vue'
 import ReportHeader from '@/components/ReportPage/ReportHeader.vue'
@@ -104,33 +114,311 @@ import IngestivoCharts from '@/components/charts/IngestivoCharts.vue'
 import DesempenhoCharts from '@/components/charts/DesempenhoCharts.vue'
 import ViabilidadeCharts from '@/components/charts/ViabilidadeCharts.vue'
 
-// =========================================================
-// PASSO 1: Importar TODAS as funções da API
-// =========================================================
-import { animalGet } from '@/api/animais';
+// IMPORTAÇÕES DA API (Para o fetchData)
 import { getConsumoDiario, getMinutoPorRefeicao } from '@/api/comportamentoIngestivo.js';
-// import { getRefeicoesBrutas } from '@/api/comportamentoIngestivo.js';
-// IMPORT FALTANTE: Função que busca dados brutos do endpoint /api/refeicoes/?animal={id}
-
-// TODO: Crie os arquivos 'desempenho.js' e 'viabilidade.js' e importe as funções de lá
 import { getEvolucaoPeso, getEvolucaoConsumoDiario, getEvolucaoGanho, getEvolucaoGMD } from '@/api/desempenho.js';
 import { getCustoTotal, getEvolucaoCustoDiario, getGanhoPorDia } from '@/api/viabilidade.js';
+import { animalGet } from '@/api/animais';
+import { refeicaoGet } from '@/api/refeicoes.js';
 
-// Funções do Componente Filho IngestivoCharts (que precisam ser passadas via props)
-const selecionadoPonto = ref(null);
+const mensagemErro = ref('')
+const animais = ref([]);
+const dadosAPI = ref(null);
+const precoKgRacao = ref('0.50'); //teste
+const precoKgPesoVivo = ref('10.00');
+
+
+
+// import { DATA } from '@/data/mock.js'  // futuramente trocamos pelo axios
+
+const selecionadoPonto = ref(null)
 const onPointClick = (p) => { selecionadoPonto.value = p }
 
+// AUXILIAR: Processa o array de refeições brutas e gera os arrays de pontos
+function processarRefeicoesBrutas(refeicoesBrutas, idAnimal, loteId) {
+  const horaEntradaData = [];
+  const horaSaidaData = [];
+  const ingestivoData = []; // Duração (já que este gráfico também precisa)
+
+  if (!Array.isArray(refeicoesBrutas)) return { horaEntradaData, horaSaidaData, ingestivoData };
+
+  refeicoesBrutas.forEach((refeicao, index) => {
+    // X-axis: Índice (Contador de Refeição)
+    const xValue = index + 1;
+
+    // Y-axis: Conversão para Minutos Totais (0 a 1440)
+    const entradaMins = timeToMinutes(refeicao.horario_entrada);
+    const saidaMins = timeToMinutes(refeicao.horario_saida);
+    const duracaoMins = calculateDuration(refeicao.horario_entrada, refeicao.horario_saida);
+
+    const pontoBase = { x: xValue, id: idAnimal, lote: loteId };
+
+    // Adiciona aos arrays de resultado
+    horaEntradaData.push({ ...pontoBase, y: entradaMins });
+    horaSaidaData.push({ ...pontoBase, y: saidaMins });
+    ingestivoData.push({ ...pontoBase, y: duracaoMins });
+  });
+
+  return { horaEntradaData, horaSaidaData, ingestivoData };
+}
 
 
-// =========================================================
-// FUNÇÕES AUXILIARES DE CONVERSÃO (Obrigatórias para processar refeições)
-// =========================================================
+async function fetchData(tipo, id) {
 
-// Converte "HH:MM:SS" em minutos totais desde a meia-noite (necessário para plotar Horas)
+  mensagemErro.value = '';
+  dadosAPI.value = null;
+
+  try {
+    // 1. INGESTIVO + 2. DESEMPENHO + 3. VIABILIDADE (Chamadas paralelas com tratamento de erro individual agr)
+    const [consumo, minuto, refeicoesBrutas, evolucaoPeso, evolucaoConsumo, evolucaoGanho, evolucaoGMD,
+      custoTotal, evolucaoCusto, ganhoPorDia] = await Promise.all([
+
+        // INGESTIVO
+        // INGESTIVO - Consumo Diário (AGORA SEGURO)
+        (async () => { // ⬅️ ENCAPSULAMENTO DE SEGURANÇA
+          try {
+            return await getConsumoDiario(tipo, id);
+          } catch (e) {
+            console.warn(`Consumo Diário falhou para ${tipo}/${id}. Ignorando...`);
+            return null; // Retorna null para não quebrar o Promise.all
+          }
+        })(),
+
+        // INGESTIVO - Minuto por Refeição (AGORA SEGURO)
+        (async () => { // ⬅️ ENCAPSULAMENTO DE SEGURANÇA
+          try {
+            return await getMinutoPorRefeicao(tipo, id);
+          } catch (e) {
+            console.warn(`Minuto por Refeição falhou para ${tipo}/${id}. Ignorando...`);
+            return null; // Retorna null para não quebrar o Promise.all
+          }
+        })(),
+
+
+        // 2. REFEIÇÕES BRUTAS (Para Hora Entrada/Saída/Duração)
+        (async () => {
+          // Só busca refeições individuais para um animal específico
+          if (tipo !== 'animal' || !id) return []; 
+          try {
+            return await refeicaoGet(null, { animal: id });
+          } catch (e) {
+            return [];
+          }
+        })(),
+        // ... RESTANTE DAS CHAMADAS DE DESEMPENHO E VIABILIDADE
+
+
+        // DESEMPENHO - ALTO RISCO (Exige dados de peso histórico)
+        // Evolução Peso (Somente animal)
+        (async () => {
+          if (tipo !== 'animal') return null;
+          try {
+            return await getEvolucaoPeso(tipo, id);
+          } catch (e) {
+            console.warn(`Evolução Peso falhou para ${tipo}/${id}. Ignorando...`);
+            return null;
+          }
+        })(),
+
+        // Evolução Consumo Diário (Baixo risco, depende do dado base)
+        getEvolucaoConsumoDiario(tipo, id),
+
+        // Evolução Ganho (Somente animal)
+        (async () => {
+          if (tipo !== 'animal') return null;
+          try {
+            return await getEvolucaoGanho(tipo, id);
+          } catch (e) {
+            console.warn(`Evolução Ganho falhou para ${tipo}/${id}. Ignorando...`);
+            return null;
+          }
+        })(),
+
+        // Evolução GMD (Somente animal)
+        (async () => {
+          if (tipo !== 'animal') return null;
+          try {
+            return await getEvolucaoGMD(tipo, id);
+          } catch (e) {
+            console.warn(`Evolução GMD falhou para ${tipo}/${id}. Ignorando...`);
+            return null;
+          }
+        })(),
+
+        // VIABILIDADE - ALTO RISCO (Exige cálculos de preço e GMD)
+        // Custo Total
+        (async () => {
+          try {
+            return await getCustoTotal(tipo, id, Number(precoKgRacao.value));
+          } catch (e) {
+            console.warn(`Custo Total falhou para ${tipo}/${id}. Ignorando...`);
+            return null;
+          }
+        })(),
+
+        // Evolução Custo Diário
+        (async () => {
+          try {
+            return await getEvolucaoCustoDiario(tipo, id, Number(precoKgRacao.value));
+          } catch (e) {
+            console.warn(`Evolução Custo Diário falhou para ${tipo}/${id}. Ignorando...`);
+            return null;
+          }
+        })(),
+
+        // Ganho por Dia (Requer GMD, muito propenso a falhar)
+        (async () => {
+          try {
+            return await getGanhoPorDia(tipo, id, Number(precoKgPesoVivo.value));
+          } catch (e) {
+            console.warn(`Ganho por Dia falhou para ${tipo}/${id}. Ignorando...`);
+            return null;
+          }
+        })(),
+      ]);
+
+
+
+    const { horaEntradaData, horaSaidaData, ingestivoData: duracaoRefeicao } = processarRefeicoesBrutas(
+      refeicoesBrutas, // ⬅️ Array de objetos de refeição
+      id,              // ⬅️ animalId/loteId
+      loteId.value     // ⬅️ Lote atual
+    );
+
+    if (tipo === 'lote') {
+        // 1. O que a API retorna para o Consumo Diário do Lote
+        console.log(`[DEBUG LOTE] Consumo Bruto:`, consumo);
+        
+        // 2. O que a API retorna para Minuto por Refeição do Lote
+        console.log(`[DEBUG LOTE] Minuto Bruto:`, minuto);
+        
+        // 3. Verifica se o mapeamento produz um array plotável
+        console.log(`[DEBUG LOTE] Consumo Mapeado (Array):`, transformData(consumo, id, tipo));
+    }
+
+
+    // LOG DE DEBUG CORRETO: Loga a variável que recebeu o resultado da API
+    console.log("DADOS CRUS DE CONSUMO RECEBIDOS:", consumo);
+
+    // LOG DE DEBUG CORRETO: Loga o resultado da transformação
+    console.log("PONTOS DE CONSUMO TRANSFORMADOS:", transformData(consumo, id, tipo));
+
+    // LOG DE DEBUG CORRETO: Loga a variável que recebeu o resultado da API
+    console.log("DADOS CRUS DE Min/refeicao RECEBIDOS:", minuto);
+
+    // LOG DE DEBUG CORRETO: Loga o resultado da transformação
+    console.log("PONTOS DE min/refeicao TRANSFORMADOS:", transformData(minuto, id, tipo));
+
+    console.log(`Buscando Min/Refeição com TIPO: ${tipo}`); // ⬅️ DEVE SER 'animal'
+
+    console.log("RESULTADO BRUTO - Refeições Brutas:", refeicoesBrutas); // Se essa for a 3ª variável
+
+    // ⬅️ LOG DE DEBUG DO MAPEAR
+    console.log("PONTOS MIN/REFEIÇÃO MAPEADOS:", transformData(minuto, id, tipo));
+
+    // **MAPEAMENTO E AGRUPAMENTO**
+    dadosAPI.value = {
+      ...emptySource,
+      // INGESTIVO
+      consumoDiario: transformData(consumo, id, tipo),
+      minRefeicao: transformData(minuto, id, tipo),
+
+      horaEntrada: horaEntradaData, // ⬅️ AGORA TERÁ DADOS
+      horaSaida: horaSaidaData,
+      ingestivo: duracaoRefeicao,
+
+      // DESEMPENHO
+      EvolucaoPVDia: transformData(evolucaoPeso, id, tipo),
+      EvolucaoConsumoDiario: transformData(evolucaoConsumo, id, tipo),
+      EvolucaoGanho: transformData(evolucaoGanho, id, tipo),
+      EvolucaoGMD: transformData(evolucaoGMD, id, tipo),
+
+      // VIABILIDADE
+      custoTotal: custoTotal?.custo_total || 0, // Valor único (não série)
+      evolucaoCusto: transformData(evolucaoCusto, id, tipo),
+      ganhopordia: transformData(ganhoPorDia, id, tipo),
+    };
+
+  } catch (error) {
+    // Lógica de tratamento de erro aprimorada
+    const serverError = error.response?.data?.erro;
+    mensagemErro.value = serverError
+      // ? `⚠️ Erro do Servidor: ${serverError}`
+      // : `⚠️ Falha na comunicação com a API. Status: ${error.response?.status || 'Rede'}`;
+
+    dadosAPI.value = null;
+  }
+}
+
+onMounted(async () => {
+  try {
+    // Busca a lista completa de animais (GET /animais/)
+    const listaCompleta = await animalGet();
+    animais.value = listaCompleta; // Armazena no ref para uso futuro (tabela)
+
+    // Loga a lista completa para o console (como seu colega vê)
+    console.log("Lista Completa de Animais:", listaCompleta);
+
+  } catch (error) {
+    console.error("Erro ao carregar lista de animais:", error);
+    // Em caso de erro 500, animais.value será []
+  }
+});
+
+// ReportPage.vue - Função minutesToTime (CORRIGIDA para Minutos Decimais)
+
+const minutesToTime = (totalMins) => {
+  // Garante que o valor é numérico e positivo
+  const mins = Number(totalMins);
+  if (isNaN(mins) || mins < 0) return '00:00';
+
+  // 1. Calcula a parte dos minutos inteiros (ex: 7)
+  const minutesPart = Math.floor(mins);
+
+  // 2. Calcula a parte decimal (os segundos)
+  const decimalPart = mins - minutesPart;
+
+  // 3. Converte a parte decimal para segundos (multiplica a decimal por 60)
+  const seconds = Math.round(decimalPart * 60); // Ex: 0.586 * 60 ≈ 35 segundos
+
+  // 4. Formata as partes
+  // Se a duração for menor que 60 minutos, mostramos MM:SS
+  if (minutesPart < 60) {
+    const m = String(minutesPart).padStart(2, '0');
+    const s = String(seconds).padStart(2, '0');
+    return `${m}:${s}`;
+  }
+
+  // Se a duração for mais de uma hora (opcionalmente HH:MM)
+  else {
+    const h = String(Math.floor(mins / 60)).padStart(2, '0');
+    const m = String(Math.round(mins % 60)).padStart(2, '0');
+    return `${h}:${m}`;
+  }
+}
+
+const formatDate = (date) => {
+  if (!date) return '';
+  let d = date instanceof Date ? date : new Date(date);
+
+  // Se o objeto for válido, formate
+  if (!isNaN(d.getTime())) {
+    return d.toLocaleDateString('pt-BR');
+  }
+  // Caso contrário, retorne a string bruta se não puder ser formatada
+  return String(date);
+}
+const formatKg = (value) => `${value} kg`
+
+const formatReais = (value) => {
+  // Formata como moeda brasileira
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
+// Converte "HH:MM:SS" em minutos totais desde a meia-noite
 const timeToMinutes = (timeString) => {
   if (!timeString) return 0;
   const [h, m, s] = timeString.split(':').map(Number);
-  // Retorna minutos totais: 1 hora = 60 minutos
   return h * 60 + m + (s / 60 || 0);
 };
 
@@ -140,278 +428,140 @@ const calculateDuration = (entrada, saida) => {
 };
 
 
-// ====== FUNÇÕES DE FORMATAÇÃO (MANTIDAS) ======
-const minutesToTime = (mins) => {
-  const h = String(Math.floor(mins / 60)).padStart(2, '0')
-  const m = String(Math.round(mins % 60)).padStart(2, '0')
-  return `${h}:${m}`
-}
+const formatSelectedY = (ponto) => {
+  // ⚠️ Se o ponto vier de uma emissão que não injetou y_unit, a unidade padrão é 'Valor'.
+  const yUnit = ponto.y_unit || 'Valor';
 
-const formatDate = (date) => {
-  if (typeof date === 'object' && date instanceof Date && !isNaN(date)) {
-    // Trata o objeto Date que vem do transformData
-    return date.toLocaleDateString('pt-BR', { year: 'numeric', month: '2-digit', day: '2-digit' })
-  }
-  if (typeof date === 'string') {
-    const d = new Date(date)
-    if (isNaN(d)) return date
-    return d.toLocaleDateString('pt-BR', { year: 'numeric', month: '2-digit', day: '2-digit' })
-  }
-  return ''
-}
+  if (!ponto || ponto.y === undefined) return 'N/A';
 
-const formatKg = (value) => `${value} kg`
-const formatReais = (value) => {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
+  // Se o valor y é a duração/hora, use minutesToTime
+  switch (yUnit) {
+    case 'Minutos':
+    case 'Horas':
+      // Assumimos que o valor Y é Minutos/Horas e deve ser convertido para minutos totais
+      // Se o valor Y é muito pequeno (0.13) e deveria ser grande (8), pode ser HORAS.
+      // Tente multiplicar antes de formatar para minutos:
+      return minutesToTime(ponto.y);
+
+    case 'Kg':
+    case 'GMD (kg)':
+      return formatKg(ponto.y);
+
+    case 'Reais (R$)':
+      return formatReais(ponto.y);
+
+    default:
+      // Retorna o valor bruto para outros casos
+      return ponto.y;
+  }
+};
 
 const selecionado = ref(false)
 
-// ====== CONTROLES DE ESTADO (FILTROS) ======
-const modo = ref('animal');
-const animalId = ref('8');
-const loteId = ref('');
-const grafSelecionado = ref('todos');
-const mensagemErro = ref('');
-
-// Variáveis de Preço (Necessárias para a API de Viabilidade)
-// eslint-disable-next-line no-unused-vars
-const precoKgRacao = ref(0.50) // Será usado na API de Viabilidade
-// eslint-disable-next-line no-unused-vars
-const precoKgPesoVivo = ref(10.00) // Será usado na API de Viabilidade
-
-// Estado para a requisição de dados
-const dadosAPI = ref(null);
-const animais = ref([]); // Estado para a lista de animais da tabela
-
-import { onMounted } from 'vue'; // Import onMounted
 
 
-const isLoading = ref(false);
+// ====== CONTROLES DA SEÇÃO ======
+const modo = ref('animal')                 // 'animal' | 'lote' | 'geral'
+const animalId = ref('') //colocar um q existe
+const loteId = ref('lote_real_1')
+const grafSelecionado = ref('todos')     // 'todos' | 'ingestivo' | 'desempenho' | 'viabilidade'
 
-// Objeto fonte de dados vazio (emptySource)
-const emptySource = {
-  ingestivo: [], desempenho: [], viabilidade: [], custo: [], evolucaocusto: [],
-  EvolucaoPVPeriodo: [], EvolucaoPVDia: [], EvolucaoGMD: [], EvolucaoGanho: [],
-  horaEntrada: [], horaSaida: [], minRefeicao: [], consumoDiario: [], ganhopordia: []
-};
+const emptySource = { ingestivo: [], desempenho: [], viabilidade: [], custo: [], evolucaocusto: [], EvolucaoPVPeriodo: [], EvolucaoPVDia: [], EvolucaoGMD: [], EvolucaoGanho: [], horaEntrada: [], horaSaida: [], minRefeicao: [], consumoDiario: [], ganhopordia: [] };
 
-// =========================================================
-// FUNÇÃO AUXILIAR: Transforma o formato { "data": valor } da API
-// =========================================================
+// ReportPage.vue - Função AUXILIAR transformData
+
+/**
+ * Transforma dados brutos da API (formato { 'data': valor }) em um array de pontos
+ * plotáveis pelo Chart.js (formato [{ x: Date, y: valor, id: id_do_ponto }]).
+ * * @param {Object|null} data - O objeto de dados brutos retornado por uma GET API (ex: consumo).
+ * @param {string} currentId - ID/Nome do animal ou lote que foi usado no filtro.
+ * @param {string} currentTipo - O modo do filtro ('animal', 'lote', 'geral').
+ * @returns {Array<Object>} Array de pontos plotáveis.
+ */
 const transformData = (data, currentId, currentTipo) => {
-  if (!data || typeof data !== 'object') return [];
-  return Object.entries(data).map(([date, value]) => ({
-    // Transforma a string 'YYYY-MM-DD' em um objeto Date para o x-type="time"
-    x: new Date(date),
-    y: value,
-    id: currentTipo === 'animal' ? currentId : null,
-    lote: currentTipo === 'lote' ? currentId : null,
-  }));
+    // 1. Verificação de Falha: Se não for um objeto válido ou estiver vazio, retorne vazio.
+    // O Object.keys(data).length verifica se há dados dentro do objeto.
+    if (!data || typeof data !== 'object' || Object.keys(data).length === 0) {
+        return [];
+    }
+
+    // A lógica para 'animal' e 'lote' (e 'geral' se for série simples) é a mesma:
+    // Mapear o objeto { data: valor } para o array [{x, y}].
+    return Object.entries(data).map(([date, value]) => {
+        
+        // CORREÇÃO: Para evitar que o fuso horário retroceda a data (quebra de exibição), 
+        // adicione um horário no meio do dia (ex: 12:00:00) ao criar o objeto Date.
+        const dateStringWithTime = `${date}T12:00:00`;
+        
+        // ➡️ Eixo X: Cria o objeto Date a partir da string
+        const dateObject = new Date(dateStringWithTime);
+        
+        return {
+            x: dateObject,
+            y: value,
+            
+            // ID para Destaque: Se for 'animal', usamos o ID do animal; se for 'lote', usamos a data.
+            id: currentTipo === 'animal' ? currentId : date,
+            
+            // Lote: Anexa o ID do lote se o modo for 'lote'
+            lote: currentTipo === 'lote' ? currentId : null,
+        }
+    });
 };
 
-// =========================================================
-// FUNÇÃO PRINCIPAL: BUSCA DADOS NA API (AGORA COMPLETA)
-// =========================================================
-async function fetchData(tipo, id) {
-  isLoading.value = true;
-  mensagemErro.value = '';
-  dadosAPI.value = null;
-
-  try {
-    // A busca da lista de animais foi movida para o onMounted para ser feita uma vez na inicialização.
-
-    // 1. INGESTIVO: Requer 3 chamadas (2 agregadas + 1 bruta)
-    const [consumo, minuto] = await Promise.all([
-      getConsumoDiario(tipo, id),
-      getMinutoPorRefeicao(tipo, id),
-
-      // // Chamada CONDICIONAL para dados brutos, necessária apenas no modo 'animal' e se o ID for um número
-
-    ]);
-    const refeicoesBrutas = [];
 
 
-    console.log('Dados de Consumo Recebidos:', consumo);
-    // console.log('Refeições Brutas Recebidas:', refeicoesBrutas);
+watch([modo, animalId, loteId], ([newModo]) => {
+    selecionadoPonto.value = null;
+    mensagemErro.value = '';
 
-    // 2. DESEMPENHO (Comentado, mas a estrutura está correta)
-    // 2. DESEMPENHO (Rotas corrigidas para seguir o README)
-    const [evolucaoPeso, evolucaoConsumo, evolucaoGanho, evolucaoGMD] = await Promise.all([
-      // [1] Evolução Peso: SÓ existe para ANIMAL (brinco)
-      tipo === 'animal' ? getEvolucaoPeso(id) : Promise.resolve(null),
-
-      // [2] Evolução Consumo: Existe para ambos (animal/lote)
-      getEvolucaoConsumoDiario(tipo, id),
-
-      // [3] Evolução Ganho: SÓ existe para ANIMAL (brinco)
-      tipo === 'animal' ? getEvolucaoGanho(id) : Promise.resolve(null),
-
-      // [4] Evolução GMD: SÓ existe para ANIMAL (brinco)
-      tipo === 'animal' ? getEvolucaoGMD(id) : Promise.resolve([null]),
-    ]);
-
-    // 3. VIABILIDADE ECONÔMICA (Comentado, mas a estrutura está correta)
-    // 3. VIABILIDADE ECONÔMICA (Rotas corrigidas para seguir o README)
-    const [custoTotal, evolucaoCusto, ganhoPorDia] = await Promise.all([
-      // [1] Custo Total: ACEITA APENAS UM PREÇO (Preço da Ração)
-      getCustoTotal(tipo, id, precoKgRacao.value), // Removido o segundo preço
-
-      // [2] Evolução Custo Diário: Aceita Preço da Ração
-      getEvolucaoCustoDiario(tipo, id, precoKgRacao.value),
-
-      // [3] Ganho por Dia: Aceita Preço do Peso Vivo
-      getGanhoPorDia(tipo, id, precoKgPesoVivo.value),
-    ]);
-
-    // =========================================================
-    // 4. PROCESSAMENTO DE DADOS BRUTOS (Hora Entrada/Saída/Ingestivo)
-    // =========================================================
-    const horaEntradaData = [];
-    const horaSaidaData = [];
-    const ingestivoData = []; // Duração da refeição
-
-    if (tipo === 'animal' && Array.isArray(refeicoesBrutas) && refeicoesBrutas.length > 0) {
-      refeicoesBrutas.forEach((refeicao, index) => {
-        // X-axis: Índice (Contador de Refeição) para "Presença no comedouro"
-        const xValue = index + 1;
-
-        // Y-axis: Horário de entrada/saída em minutos
-        const entradaMins = timeToMinutes(refeicao.horario_entrada);
-        const saidaMins = timeToMinutes(refeicao.horario_saida);
-        const duracaoMins = calculateDuration(refeicao.horario_entrada, refeicao.horario_saida);
-
-        const pontoBase = { x: xValue, id: refeicao.id, lote: refeicao.lote_id || loteId.value };
-
-        horaEntradaData.push({ ...pontoBase, y: entradaMins });
-        horaSaidaData.push({ ...pontoBase, y: saidaMins });
-        ingestivoData.push({ ...pontoBase, y: duracaoMins }); // Comportamento Ingestivo (Duração)
-      });
+    // Lógica de UX: Limpa o campo do modo antigo ao mudar para 'geral'
+    if (newModo === 'geral' && (animalId.value || loteId.value)) {
+        // Limpamos, mas não retornamos, para que o modo 'geral' possa carregar o padrão.
+        animalId.value = '';
+        loteId.value = '';
     }
 
+    // Define o ID de Lote Padrão para quando os inputs estiverem vazios
+    const ID_LOTE_PADRAO = loteId.value || 'lote_real_1'; 
+    // ^^^ Use aqui o ID real do seu lote padrão, se for diferente de 'Lote Padrão' ^^^
 
-    // **5. Mapeamento e Transformação Final**
-    dadosAPI.value = {
-      // Começa com todas as chaves garantidas e vazias
-      ...emptySource,
-
-      // INGESTIVO
-      // Agora, sobrescreve as chaves com os dados reais que foram buscados
-      consumoDiario: transformData(consumo, id, tipo),
-      minRefeicao: transformData(minuto, id, tipo),
-      horaEntrada: horaEntradaData,
-      horaSaida: horaSaidaData,
-      ingestivo: ingestivoData,
-      // ... adicione aqui os dados de Desempenho e Viabilidade quando forem implementados
-
-      // === ADIÇÃO NECESSÁRIA PARA DESEMPENHO ===
-      // Assumindo que você quer passar os dados brutos e que o transformData funciona
-      // (Ainda é um objeto { "data": valor } que o transformData consegue mapear)
-      EvolucaoPVDia: transformData(evolucaoPeso, id, tipo), // Mapeia a evolução do peso
-      EvolucaoConsumoDiario: transformData(evolucaoConsumo, id, tipo), // Mapeia a evolução do consumo
-      EvolucaoGanho: transformData(evolucaoGanho, id, tipo), // Mapeia a evolução do ganho
-      EvolucaoGMD: transformData(evolucaoGMD, id, tipo), // Mapeia o GMD
-
-      // === ADIÇÃO NECESSÁRIA PARA VIABILIDADE ===
-      // Estes podem ser valores únicos ou séries temporais, use o transformData se forem séries.
-      custoTotal: custoTotal.custo_total || 0, // Assume que custoTotal retorna { custo_total: X }
-      evolucaoCusto: transformData(evolucaoCusto, id, tipo),
-      ganhopordia: transformData(ganhoPorDia, id, tipo),
-
-      // NOTA: Ajuste as chaves (ex: EvolucaoPVDia) para o que os componentes filhos esperam.
-    };
-
-
-  } catch (error) {
-    const status = error.response ? error.response.status : '';
-    let errorMessage = `⚠️ Falha ao carregar dados (${tipo} ${id}). Status: ${status || 'Rede/API'}.`;
-
-    // Tenta extrair a mensagem de erro específica do servidor (Ex: "Não foram encontrados animais...")
-    const serverError = error.response?.data?.erro;
-
-    if (serverError) {
-      // Se o servidor enviou uma mensagem clara, usamos ela.
-      mensagemErro.value = `⚠️ Erro do Servidor: ${serverError}`;
-    } else {
-      // Caso contrário (erro de rede, ou 404 sem corpo), usamos a mensagem genérica.
-      mensagemErro.value = errorMessage;
+    // 1. Prioridade: Modo 'animal'
+    if (newModo === 'animal') {
+        if (animalId.value) {
+            // A. ESPECÍFICO: Animal ID digitado -> Busca AQUELE animal
+            fetchData('animal', animalId.value);
+        } else {
+            // B. SEM ID: Se Animal ID vazio -> Volta para a visão Lote (TODOS)
+            fetchData('lote', ID_LOTE_PADRAO);
+        }
+    } 
+    
+    // 2. Prioridade: Modos 'lote' ou 'geral'
+    else if (newModo === 'lote' || newModo === 'geral') {
+        // C. LOTE/GERAL: Usa o Lote digitado ou o Lote Padrão se o campo estiver vazio
+        fetchData('lote', ID_LOTE_PADRAO);
+    } 
+    
+    // Fallback: (Se houver outro modo, apenas limpa)
+    else {
+        dadosAPI.value = null;
+        // Não exibe mensagem de erro para que a tela não mostre um aviso ao carregar.
     }
-
-    // Limpeza de estado (correto)
-    dadosAPI.value = null;
-    animais.value = [];
-
-    // Log completo para o desenvolvedor (correto)
-    console.error(`Erro no fetch (${tipo} ${id}):`, error);
-  } finally {
-    isLoading.value = false;
-  }
-}
-
-// =========================================================
-// BUSCA INICIAL: Popula a lista de animais uma vez ao montar o componente
-// =========================================================
-onMounted(async () => {
-  // Esta chamada é para popular a lista geral de animais (ex: para um dropdown).
-  // Se animalGet(8) deve retornar uma lista de animais, então está correto.
-  // Se animalGet(8) retorna um único animal, e 'animais' é para uma lista,
-  // você pode precisar ajustar a chamada (ex: animalGet() para todos, ou [await animalGet(8)]).
-  animais.value = await animalGet(8);
-});
-
-// =========================================================
-// WATCHER: Dispara a requisição ao mudar os filtros
-// =========================================================
-
-watch([modo, animalId, loteId, precoKgRacao, precoKgPesoVivo], ([newModo]) => {
-  selecionadoPonto.value = null;
-  mensagemErro.value = '';
-
-  // Lógica de UX: Limpa os inputs ao mudar de modo para evitar confusão
-  if (newModo === 'geral' && (animalId.value || loteId.value)) {
-    animalId.value = '';
-    loteId.value = '';
-    // A limpeza dos IDs vai disparar o watch novamente, então retornamos para evitar uma chamada dupla.
-    // Na próxima execução, os IDs estarão limpos e a chamada para 'geral' será feita.
-    return;
-  }
-
-  if (newModo === 'geral') {
-    // NOVO COMPORTAMENTO: Se não há nada predefinido, mostra a instrução de busca.
-    dadosAPI.value = null;
-    mensagemErro.value = 'Selecione o modo "Animal" ou "Lote" e digite um ID para começar.';
-  }
-
-  else if (newModo === 'lote') {
-    if (loteId.value) {
-      fetchData('lote', loteId.value);
-    } else {
-      mensagemErro.value = 'Digite o ID do Lote para buscar.';
-      dadosAPI.value = null;
-    }
-  }
-
-  else if (newModo === 'animal') {
-    if (animalId.value) {
-      // Busca o animal 8 (ou qualquer valor digitado)
-      fetchData('animal', animalId.value);
-    } else {
-      mensagemErro.value = 'Digite o ID do Animal para buscar.';
-      dadosAPI.value = null;
-    }
-  }
 }, { immediate: true });
 
-
+// FONTE COMPUTADA (Mapeia o dado bruto para o formato do gráfico)
 const fonte = computed(() => {
-  // Retorna a fonte vazia se estiver carregando ou com erro
-  if (isLoading.value || !dadosAPI.value) {
+  if (!dadosAPI.value) {
     return emptySource;
   }
+  // NOTA: Para o modo 'lote', o Desempenho e Viabilidade ainda podem ser 'null' aqui,
+  // mas o emptySource garante o fallback para o componente filho.
   return dadosAPI.value;
 });
 
-// ====== SELEÇÃO DE PONTO E DESTAQUE (MANTIDOS) ======
+
+// HighlightId é o ID que será destacado nos gráficos
 const highlightId = computed(() => {
   if (selecionadoPonto.value) {
     return selecionadoPonto.value.id;
@@ -421,6 +571,9 @@ const highlightId = computed(() => {
   }
   return null;
 });
+
+// ====== DADOS DA TABELA ====== //NAO USAMOS MAIS ESSE
+
 </script>
 
 <style scoped>
