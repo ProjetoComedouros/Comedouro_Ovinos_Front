@@ -29,11 +29,26 @@ export async function getEvolucaoPeso(tipo, id) { // ⬅️ AGORA ACEITA TIPO
     }
     // Inclui o tipo na rota
     const url = `evolucao-peso-por-dia/${tipo}/${id}/`; 
+    const apiParams= {};
+
+    if (tipo === 'animal') {
+        // Se for animal, o filtro é 'animal.brincoId' (ou o nome que a API de relatórios espera)
+        apiParams['animal.brincoId'] = id; 
+    } else if (tipo === 'lote') {
+        // Se for lote, o filtro é 'loteId'
+        apiParams['loteId'] = id;
+    }
+
     try {
-        const response = await api.get(url);
+        // 4. Passe 'apiParams' para a chamada 'get'
+        const response = await api.get(url, { params: apiParams });
+        console.log(`[API ROTA] evol-peso URL: ${url}`);
+        console.log(`[API SUCESSO] evol-peso Dados Brutos:`, response.data);
         return response.data;
+       
     } catch (error) {
-        console.error(`Erro ao buscar Evolução de Peso para ${tipo} ${id}:`, error.response || error);
+        // Adicionei os parâmetros ao log de erro para facilitar o debug
+        console.error(`Erro ao buscar Evolução de Peso para ${tipo} ${id} (URL: ${url}, Params: ${JSON.stringify(apiParams)}):`, error.response || error);
         throw error;
     }
 }
@@ -58,8 +73,19 @@ export async function getEvolucaoConsumoDiario(tipo, id) {
         throw new Error(`ID de ${tipo} é obrigatório para buscar evolução de consumo diário.`);
     }
     const url = `evolucao-consumo-diario/${tipo}/${id}/`;
+
+    const apiParams= {};
+
+    if (tipo === 'animal') {
+        apiParams['animal.brincoId'] = id;
+    } else if (tipo === 'lote') {
+        apiParams['loteId'] = id;
+    }
+
     try {
-        const response = await api.get(url);
+        const response = await api.get(url, { params: apiParams });
+        console.log(`[API ROTA] consumodiario URL: ${url}`);
+        console.log(`[API SUCESSO] consumodiario Dados Brutos:`, response.data);
         return response.data;
     } catch (error) {
         console.error(`Erro ao buscar Evolução de Consumo Diário para ${tipo} ${id}:`, error.response || error);

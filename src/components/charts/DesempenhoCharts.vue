@@ -1,172 +1,94 @@
 <template>
-  <ScatterBubbles
-    v-if="grafSelecionado === 'todos' || grafSelecionado === 'desempenho'"
-    title="Evolucao PV/Periodo"
-    :pontos="pontos.EvolucaoPVPeriodo"
-    x-label="Peso Vivo (kg)"
-    y-label="Peso vivo (kg)"
-    color="#16a34a"
-    :highlight-id="highlightId"
-    :x-formatter="(v) => v"
-    :y-formatter="(v) => v"
-    x-type="linear"
-    @point-click="onPointClick"
-  />
+    <ScatterBubbles v-if="grafSelecionado === 'todos' || grafSelecionado === 'desempenho'" title="Evolução PV/Período"
+        :pontos="pontosEvolucaoPVPeriodoTransformados" :chart-type="dynamicChartType" x-label="Data"
+        y-label="Peso vivo (kg)" color="#16a34a" :highlight-id="highlightId" :x-formatter="formatDate"
+        :y-formatter="(v) => v" x-type="time"
+        @point-click="(p) => emitPointClick(p, 'Evolução PV/Período', 'Peso vivo (kg)')" />
 
-  <ScatterBubbles
-    v-if="grafSelecionado === 'animal' || grafSelecionado === 'desempenho' || grafSelecionado === 'todos'"
-    title="Evolução PV/Dia"
-    :pontos="pontosEvolucaoPesoTransformados"
-    x-label="Data"
-    y-label="Peso Vivo (kg)"
-    color="#16a34a"
-    :highlight-id="highlightId"
-    :x-formatter="formatDate"
-    :y-formatter="(v) => v"
-    x-type="time" 
-    @point-click="onPointClick"
-  />
+    <ScatterBubbles
+        v-if="grafSelecionado === 'animal' || grafSelecionado === 'desempenho' || grafSelecionado === 'todos'"
+        title="Evolução PV/Dia" :pontos="pontosEvolucaoPesoTransformados" :chart-type="dynamicChartType" x-label="Data"
+        y-label="Peso Vivo (kg)" color="#16a34a" :highlight-id="highlightId" :x-formatter="formatDate"
+        :y-formatter="(v) => v" x-type="time"
+        @point-click="(p) => emitPointClick(p, 'Evolução PV/Dia', 'Peso Vivo (kg)')" />
 
-  <ScatterBubbles
-    v-if="grafSelecionado === 'animal' || grafSelecionado === 'todos'"
-    title="Evolução do GMD"
-    :pontos="pontosGMDTransformados"
-    x-label="Data"
-    y-label="GMD (atual)"
-    color="#16a34a"
-    :highlight-id="highlightId"
-    :x-formatter="formatDate"
-    :y-formatter="formatKg"
-    x-type="time" 
-    @point-click="onPointClick"
-  />
+    <ScatterBubbles v-if="grafSelecionado === 'animal' || grafSelecionado === 'todos'" title="Evolução do GMD"
+        :pontos="pontosGMDTransformados" x-label="Data" :chart-type="dynamicChartType" y-label="GMD (atual)"
+        color="#16a34a" :highlight-id="highlightId" :x-formatter="formatDate" :y-formatter="formatKg" x-type="time"
+        @point-click="(p) => emitPointClick(p, 'Evolução do GMD', 'GMD (kg)')" />
 
-  <ScatterBubbles
-    v-if="grafSelecionado === 'animal' || grafSelecionado === 'desempenho' || grafSelecionado === 'todos'"
-    title="Evolução do Ganho"
-    :pontos="pontosGanhoTransformados"
-    x-label="Data"
-    y-label="GMD (atual)"
-    color="#16a34a"
-    :highlight-id="highlightId"
-    :x-formatter="formatDate"
-    :y-formatter="formatKg"
-    x-type="time" 
-    @point-click="onPointClick"
-  />
+    <ScatterBubbles
+        v-if="grafSelecionado === 'animal' || grafSelecionado === 'desempenho' || grafSelecionado === 'todos'"
+        title="Evolução do Ganho" :pontos="pontosGanhoTransformados" :chart-type="dynamicChartType" x-label="Data"
+        y-label="GMD (atual)" color="#16a34a" :highlight-id="highlightId" :x-formatter="formatDate"
+        :y-formatter="formatKg" x-type="time"
+        @point-click="(p) => emitPointClick(p, 'Evolução do Ganho', 'GMD (kg)')" />
 
-  <ScatterBubbles
-    v-if="grafSelecionado === 'animal' || grafSelecionado === 'todos'"
-    title="Evolução Consumo Diário"
-    :pontos="pontosEvolucaoConsumoTransformados" x-label="Data"
-    y-label="Consumo (kg)"
-    color="#00BCD4"
-    :highlight-id="highlightId"
-    :x-formatter="formatDate"
-    :y-formatter="formatKg"
-    x-type="time" 
-    @point-click="onPointClick"
-/>
+    <ScatterBubbles v-if="grafSelecionado === 'animal' || grafSelecionado === 'todos'" title="Evolução Consumo Diário"
+        :pontos="pontosEvolucaoConsumoTransformados" :chart-type="dynamicChartType" x-label="Data"
+        y-label="Consumo (kg)" color="#00BCD4" :highlight-id="highlightId" :x-formatter="formatDate"
+        :y-formatter="formatKg" x-type="time"
+        @point-click="(p) => emitPointClick(p, 'Evolução Consumo Diário', 'Consumo (kg)')" />
 
 </template>
 
 <script setup>
 /* global defineProps, defineEmits */
-import { ref, computed, onMounted, watch } from 'vue'; 
+import { computed } from 'vue'; // <--- ÚNICA IMPORTAÇÃO NECESSÁRIA
 import ScatterBubbles from '@/components/ScatterBubbles.vue'
-import { getEvolucaoPeso, getEvolucaoConsumoDiario, getEvolucaoGanho, getEvolucaoGMD } from '@/api/desempenho.js';
 import 'chartjs-adapter-date-fns';
 
-
+// 1. REMOVA as props 'tipoAlvo' e 'idAlvo'.
 const props = defineProps({
-    // Props de Filtro (Usamos 'idAlvo' e 'tipoAlvo' para buscar, e 'pontos' como fallback)
-    tipoAlvo: { type: String, required: true },
-    idAlvo: { type: [String, Number], required: true },
-    
-    // Props de Controle e Formatação
-    pontos: { type: Object, required: true }, // Objeto de fallback do ReportPage
+    // A prop 'pontos' é o objeto 'fonte' do ReportPage, 
+    // que JÁ CONTÉM os dados agregados.
+    modo: { type: String, required: true },
+    // animalId: { type: String, required: true },
+    pontos: { type: Object, required: true },
     grafSelecionado: { type: String, required: true },
     highlightId: { type: [String, Number], default: null },
     formatDate: { type: Function, required: true },
     formatKg: { type: Function, required: true },
 });
 const emit = defineEmits(['point-click']);
-const onPointClick = (p) => emit('point-click', p);
 
-// Variáveis de estado para armazenar os dados brutos da API
-const dadosPesoBrutos = ref(null);
-const dadosGanhoBrutos = ref(null);
-const dadosGMDBrutos = ref(null);
-const dadosConsumoBrutos = ref(null);
+const emitPointClick = (ponto, title, yUnit) => {
+    emit('point-click', {
+        ...ponto,
+        title: title,
+        y_unit: yUnit,
+    });
+};
 
+// --- Lógica de Gráfico Dinâmico ---
+// Decide qual tipo de gráfico mostrar (Linha ou Bolinhas)
+// ⬅️ CORREÇÃO: Lógica simplificada (não verifica mais 'animalId')
+const dynamicChartType = computed(() => {
+    return props.modo === 'animal' ? 'line' : 'scatter';
+});
 
-// // Defina os parâmetros necessários para a rota
-// const TIPO_ALVO = 'animal'; 
-// const BRINCO_ALVO = 52;  // usar elas ali no onmouted
+// 2. REMOVA as variáveis de estado local (dadosPesoBrutos, etc.)
+// 3. REMOVA a função 'transformData' (Já foi feita no ReportPage)
+// 4. REMOVA a função 'buscarDados' (O ReportPage faz isso)
+// 5. REMOVA 'onMounted' e 'watch'
 
-// Lógica de transformação de {data: valor} para {x: data, y: valor}
-function transformData(dadosBrutos, idAlvo, tipoAlvo) {
-    if (!dadosBrutos || typeof dadosBrutos !== 'object') return [];
-    return Object.entries(dadosBrutos).map(([date, value]) => ({
-        x: new Date(date), // Converte para objeto Date para x-type="time"
-        y: value, 
-        id: tipoAlvo === 'animal' ? idAlvo : null, // Marca o ID para highlight
-    }));
-}
-
-// FUNÇÃO DE BUSCA UNIFICADA
-async function buscarDados() {
-    const { tipoAlvo, idAlvo } = props;
-
-    // A maioria das rotas de Desempenho SÓ funciona para o modo 'animal'
-    if (tipoAlvo !== 'animal' || !idAlvo) {
-        dadosPesoBrutos.value = null;
-        dadosGanhoBrutos.value = null;
-        dadosGMDBrutos.value = null;
-        return;
-    }
-    
-    try {
-        // Busca paralela dos indicadores de Desempenho (TODOS SÓ ACEITAM ID DO ANIMAL)
-        const [peso, ganho, gmd,consumoDiario] = await Promise.all([
-            getEvolucaoPeso(tipoAlvo, idAlvo),
-            getEvolucaoGanho(tipoAlvo, idAlvo),
-            getEvolucaoGMD(tipoAlvo, idAlvo),
-            getEvolucaoConsumoDiario(tipoAlvo, idAlvo),
-        ]);
-        dadosConsumoBrutos.value = consumoDiario;
-        
-        dadosPesoBrutos.value = peso;
-        dadosGanhoBrutos.value = ganho;
-        dadosGMDBrutos.value = gmd;
-
-    } catch (error) {
-        console.error(`[API Erro - Desempenho] Falha ao buscar dados para ${idAlvo}.`, error);
-        // Limpa os dados em caso de erro para que os gráficos fiquem vazios
-        dadosPesoBrutos.value = null;
-        dadosGanhoBrutos.value = null;
-        dadosGMDBrutos.value = null;
-    }
-}
-
-// COMPUTED PROPERTIES (Prepara os dados para o gráfico)
-const pontosEvolucaoPesoTransformados = computed(() => 
-    transformData(dadosPesoBrutos.value, props.idAlvo, props.tipoAlvo)
+// 6. CORREÇÃO: Altere os 'computed' para ler DIRETAMENTE da prop 'pontos'.
+//    Os dados (ex: EvolucaoPVDia) já são arrays de pontos prontos.
+const pontosEvolucaoPesoTransformados = computed(() =>
+    props.pontos.EvolucaoPVDia || [] // Acesso direto à prop!
 );
-const pontosGanhoTransformados = computed(() => 
-    transformData(dadosGanhoBrutos.value, props.idAlvo, props.tipoAlvo)
+const pontosGanhoTransformados = computed(() =>
+    props.pontos.EvolucaoGanho || [] // Acesso direto à prop!
 );
-const pontosGMDTransformados = computed(() => 
-    transformData(dadosGMDBrutos.value, props.idAlvo, props.tipoAlvo)
+const pontosGMDTransformados = computed(() =>
+    props.pontos.EvolucaoGMD || [] // Acesso direto à prop!
 );
-
-const pontosEvolucaoConsumoTransformados = computed(() => 
-    transformData(dadosConsumoBrutos.value, props.idAlvo, props.tipoAlvo)
+const pontosEvolucaoConsumoTransformados = computed(() =>
+    props.pontos.EvolucaoConsumoDiario || [] // Acesso direto à prop!
+);
+const pontosEvolucaoPVPeriodoTransformados = computed(() =>
+    props.pontos.EvolucaoPVPeriodo || [] // Acesso direto à prop!
 );
 
 
-// Disparo inicial e reatividade
-onMounted(buscarDados);
-// Re-executa se o animalId mudar
-watch(() => props.idAlvo, buscarDados); 
 </script>

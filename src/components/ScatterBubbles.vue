@@ -1,12 +1,11 @@
 <script setup>
+/* eslint-disable */
 /* global defineProps, defineEmits */
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { Chart } from 'chart.js/auto'
 import 'chartjs-adapter-date-fns'
 
 const props = defineProps({
-
-
   title: { type: String, default: '' },
   pontos: { type: Array, default: () => [] }, // [{x,y,r?, id, nome?, lote?, ...}]
   xLabel: { type: String, default: 'Eixo X' },
@@ -16,7 +15,7 @@ const props = defineProps({
   xFormatter: { type: Function, default: v => v }, //adicionei
   yFormatter: { type: Function, default: v => v },
   xType: { type: String, default: 'linear' },
-  chartType: { type: String, default: 'scatter' } // 'scatter' ou 'bubble-line'
+  chartType: { type: String, default: 'scatter' }, // 'scatter' ou 'bubble-line'
 })
 const emit = defineEmits(['point-click'])
 
@@ -34,13 +33,15 @@ const build = () => {
       datasets: [{
         label: props.title || 'Evolução',
         data: Array.isArray(props.pontos)
-          ? props.pontos.map(p => ({ x: p.x, y: p.y, r: p.r ?? 5, id: p.id }))
+          ? props.pontos.map(p => ({ x: p.x, y: p.y, r: p.r ?? 5, id: p.id, lote: p.lote }))
           : [],
-        borderColor: props.color,
+        // A cor da linha (se houver) continua sendo a cor principal
+        borderColor: props.chartType === 'line' ? props.color : 'rgba(0, 0, 0, 0.5)',
         backgroundColor: props.color,
+        borderWidth: 1, // Adiciona uma borda de 1px
         fill: false,
         tension: 0.3,
-        pointRadius: props.chartType === 'scatter' || props.chartType === 'bubble-line' ? 5 : 0,
+        pointRadius: 3,
         showLine: props.chartType === 'bubble-line' || props.chartType === 'line'
       }]
     },
@@ -50,7 +51,7 @@ const build = () => {
       paring: true,
       scales: {
         x: {
-          title: { display: false, text: props.xLabel },
+          title: { display: true, text: props.xLabel },
           grid: { color: '#efefef' },
           type: props.xType, // 'linear' ou 'time'
 
@@ -66,29 +67,23 @@ const build = () => {
           }
         },
         y: {
-          title: { display: false, text: props.yLabel },
+          title: { display: true, text: props.yLabel },
           grid: { color: '#efefef' },
           ticks: {
             callback: value => props.yFormatter(value) //formata y
           }
         }
       },
-      // ScatterBubbles.vue - Dentro da função build (Options)
 
+      // ScatterBubbles.vue - Dentro da função build (Options)
       plugins: {
-        legend: {
-          labels: {
-            // Remove a caixa colorida ao lado da legenda
-            boxWidth: 0
-          }
-        },
+        legend: { display: false }, // Desativa a legenda, pois o título será um <h5>
         tooltip: {
           callbacks: {
             label: (context) => {
               const p = context.raw;
-              // Se highlightId existe (no modo Animal), use-o; senão, use o ID do ponto (data).
               const idDoFiltro = props.highlightId || p.id;
-              const label = `ID: ${idDoFiltro || 'N/A'}`; // Mostra ID do filtro
+              const label = `ID: ${idDoFiltro || 'N/A'} | Lote: ${p.lote}`; // Mostra ID do filtro
 
               // Formata X (Data/Ref)
               const xValue = props.xFormatter(p.x); // Simplificando a chamada do formatter
@@ -110,8 +105,9 @@ const build = () => {
         const p = props.pontos[idx]
         emit('point-click', {
           ...p,
-          y_unit: props.yUnit, // Adiciona o rótulo do Eixo Y (Minutos, Kg, Horas)
-          title: props.title // Adiciona o título do gráfico
+          y_unit: props.yLabel, // ✅ CORRETO
+          title: props.title,
+          x_type: props.xType // Adiciona o tipo do eixo X ao evento
         })
       },
       hover: { mode: 'nearest', intersect: true }
@@ -122,11 +118,12 @@ const build = () => {
 
 onMounted(build)
 onBeforeUnmount(() => chart?.destroy())
-watch(() => [props.pontos, props.highlightId], build, { deep: true })
+watch(() => [props.pontos, props.highlightId, props.chartType], build, { deep: true })
 </script>
 
 <template>
   <div class="card">
+    <h5 v-if="title" class="chart-title">{{ title }}</h5>
     <div class="canvas-wrap">
       <canvas ref="canvasRef"></canvas>
     </div>
@@ -143,8 +140,17 @@ watch(() => [props.pontos, props.highlightId], build, { deep: true })
   height: 420px
 }
 
+.chart-title {
+  font-size: 1.1rem;
+  font-weight: normal;
+  text-align: center;
+  margin-bottom: 8px;
+  color: #333;
+}
+
 .canvas-wrap {
   position: relative;
-  height: 100%
+  /* Ajusta a altura para acomodar o título */
+  height: calc(100% - 30px);
 }
 </style>

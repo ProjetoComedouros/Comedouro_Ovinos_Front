@@ -20,12 +20,24 @@ import api from './api'; // Importa a instância configurada do Axios
  */
 export async function refeicaoGet(id = null, filters = {}) {
     // 1. Define a rota base: 'refeicoes/' ou 'refeicoes/{id}/'
+    
     const url = id ? `refeicoes/${id}/` : `refeicoes/`;
+    
     console.log("Filtro enviado:", filters.animal);
+
+    const apiParams=  {};
+    if(filters.animal){
+        apiParams['animal.brincoId'] = filters.animal;
+    }
+    if(filters.data){
+        apiParams['data'] = filters.data;
+    }
+
+    // console.log("filtro REAL enviado p api:", apiParams);
     try {
         // 2. A requisição GET usa o objeto 'params' para enviar os filtros como Query String
         // Os nomes das chaves em 'filters' devem ser 'animal' e 'data' (conforme o README)
-        const response = await api.get(url, { params: filters });
+        const response = await api.get(url, { params: apiParams });
         
         return response.data;
     } catch (error) {

@@ -1,182 +1,245 @@
 <template>
-  <ScatterBubbles
-    v-if="grafSelecionado === 'todos' || grafSelecionado === 'ingestivo'"
-    title="Comportamento Ingestivo"
-    :pontos="pontos.ingestivo"
-    x-label="Presença no comedouro"
-    y-label="Horas"
-    color="#f59e0b"
-    :highlight-id="highlightId"
-    :x-formatter="(v) => v"
-    :y-formatter="minutesToTime"
-    chart-type="scatter"
-    x-type="linear"
-    @point-click="(p) => emitPointClick(p, 'Comportamento Ingestivo', 'Horas')"
-  />
+  <ScatterBubbles v-if="grafSelecionado === 'todos' || grafSelecionado === 'ingestivo'" title="Hora Entrada"
+    :pontos="pontos.horaEntrada" :chart-type="dynamicChartType" x-label="Presença no comedouro" y-label="Horas" color="orange"
+    :highlight-id="highlightId" :x-formatter="(v) => v" :y-formatter="minutesToTimeOfDay" x-type="linear"
+    @point-click="(p) => emitPointClick(p, 'Hora Entrada', 'Hora (HH:MM)')" />
+
+  <ScatterBubbles v-if="grafSelecionado === 'todos' || grafSelecionado === 'ingestivo'" title="Hora Saída"
+    :pontos="pontos.horaSaida" :chart-type="dynamicChartType" x-label="Presença no comedouro" y-label="Horas" color="green" :highlight-id="highlightId"
+    :x-formatter="(v) => v" :y-formatter="minutesToTimeOfDay" x-type="linear"
+    @point-click="(p) => emitPointClick(p, 'Hora Saída', 'Hora (HH:MM)')" />
 
   <ScatterBubbles
-    v-if="grafSelecionado === 'animal' || grafSelecionado === 'ingestivo'"
-    title="Hora Entrada"
-    :pontos="pontos.horaEntrada"
-    x-label="Presença no comedouro"
-    y-label="Horas"
-    color="orange"
-    :highlight-id="highlightId"
-    :x-formatter="(v) => v"
-    :y-formatter="minutesToTime"
-    x-type="linear"
-    @point-click="(p) => emitPointClick(p, 'Hora Entrada', 'Horas')"
-  />
+    v-if="grafSelecionado === 'animal' || grafSelecionado === 'ingestivo' || grafSelecionado === 'todos' || grafSelecionado === 'ingestivo'"
+    title="Consumo Diário" :pontos="pontos.consumoDiario" :chart-type="dynamicChartType" x-label="Data"
+    y-label="Consumo (kg)" color="#0d6efd" :highlight-id="highlightId" :x-formatter="formatDate" :y-formatter="(v) => v"
+    @point-click="(p) => emitPointClick(p, 'Consumo Diário', 'Consumo (kg)')" />
 
-  <ScatterBubbles
-    v-if="grafSelecionado === 'animal' || grafSelecionado === 'todos'"
-    title="Hora Entrada (Linha)"
-    :pontos="pontos.horaEntrada"
-    x-label="Presença no comedouro"
-    y-label="Horas"
-    color="orange"
-    :highlight-id="highlightId"
-    x-type="linear"
-    :x-formatter="(v) => v"
-    :y-formatter="minutesToTime"
-    chart-type="line"
-    @point-click="(p) => emitPointClick(p, 'Hora Entrada', 'Horas')"
-  />
-
-  <ScatterBubbles
-    v-if="grafSelecionado === 'todos' || grafSelecionado === 'horaSaida'"
-    title="Hora Saída"
-    :pontos="pontos.horaSaida"
-    x-label="Presença no comedouro"
-    y-label="Horas"
-    color="green"
-    :highlight-id="highlightId"
-    :x-formatter="(v) => v"
-    :y-formatter="minutesToTime"
-    x-type="linear"
-    @point-click="(p) => emitPointClick(p, 'Hora Saída', 'Horas')"
-  />
-
-  <ScatterBubbles
-    v-if="grafSelecionado === 'animal' || grafSelecionado === 'ingestivo' || grafSelecionado === 'todos' || grafSelecionado === 'minRefeicao'"
-    title="Min/Refeição (API)"
-    :pontos="pontos.minRefeicao" 
-    x-label="Data" 
-    y-label="Minutos"
-    color="blue"
-    :highlight-id="highlightId"
-    :x-formatter="formatDate" 
-    :y-formatter="minutesToTime"
-    x-type="time" 
-    @point-click="(p) => emitPointClick(p, 'Min/Refeição (API)', 'Minutos')"
-  />
-
-  <ScatterBubbles
-    v-if="grafSelecionado === 'animal' || grafSelecionado === 'ingestivo' || grafSelecionado === 'todos' || grafSelecionado === 'consumoDiario'"
-    title="Consumo Diário"
-    :pontos="pontos.consumoDiario"
-    x-label="Data"
-    y-label="Kg"
-    color="purple"
-    :highlight-id="highlightId"
-    x-type="time"
-    :x-formatter="formatDate"
-    :y-formatter="(v) => v"
-    @point-click="(p) => emitPointClick(p, 'Consumo Diário', 'Kg')"
-  />
+  <div class="card" v-if="grafSelecionado === 'todos' || grafSelecionado === 'ingestivo'">
+    <h5 class="chart-title">Comportamento Ingestivo</h5>
+    <div class="canvas-wrap">
+      <canvas ref="combinedIngestivoCanvas"></canvas>
+    </div>
+  </div>
 </template>
 
 <script setup>
 /* global defineProps, defineEmits */
-// 1. Importa onMounted, ref e **computed**
-// import { onMounted, ref, computed } from 'vue'; 
+import { onMounted, onBeforeUnmount, ref, watch, computed } from 'vue';
+import { Chart } from 'chart.js/auto';
 import ScatterBubbles from '@/components/ScatterBubbles.vue'
-import 'chartjs-adapter-date-fns';
 
-// // Importa a função de serviço
-// import { getMinutoPorRefeicao } from '@/api/comportamentoIngestivo.js'; 
+// --- Props ---
+const props = defineProps({
+  // Prop de Controle (do ReportPage)
+  modo: { type: String, required: true },
+  animalId: { type: String, required: true },
 
-// Props e Emits (mantidas)
-defineProps({
+  // Props de Dados e Filtro
   pontos: { type: Object, required: true },
   grafSelecionado: { type: String, required: true },
   highlightId: { type: [String, Number], default: null },
-  
+
+  // Props de Formatação
   minutesToTime: { type: Function, required: true },
+  minutesToTimeOfDay: { type: Function, required: true },
+  // formatTime: { type: Function, required: true },
   formatDate: { type: Function, required: true },
-})
+});
 
-const emit = defineEmits(['point-click'])
-// const onPointClick = (p) => emit('point-click', p)
+// --- Emits ---
+const emit = defineEmits(['point-click']);
 
+// --- Lógica do Gráfico ---
+const combinedIngestivoCanvas = ref(null);
+let combinedChart;
+
+const buildCombinedChart = () => {
+  if (combinedChart) combinedChart.destroy();
+  if (!combinedIngestivoCanvas.value) return;
+
+  const getData = (key) => (Array.isArray(props.pontos[key]) ? props.pontos[key] : []);
+
+  // Define o tipo de gráfico (linha ou bolhas) baseado no modo
+  const chartType = props.modo === 'animal' ? 'line' : 'scatter';
+  // Define se a linha deve ser mostrada
+  const showLine = props.modo === 'animal';
+
+  combinedChart = new Chart(combinedIngestivoCanvas.value, {
+    type: chartType, // Usa o tipo dinâmico
+    data: {
+      datasets: [
+        {
+          label: 'Hora Entrada',
+          data: getData('horaEntrada').map(p => ({ ...p })),
+          borderColor: chartType === 'line' ? '#f97316' : 'rgba(0, 0, 0, 0.5)',
+          backgroundColor: '#f97316',
+          yAxisID: 'y-horas',
+          pointRadius: 3,
+          borderWidth: 1,
+          showLine: showLine,
+          tension: 0.1
+        },
+        {
+          label: 'Hora Saída',
+          data: getData('horaSaida').map(p => ({ ...p })),
+          borderColor: chartType === 'line' ? '#198754' : 'rgba(0, 0, 0, 0.5)',
+          backgroundColor: '#198754',
+          yAxisID: 'y-horas',
+          pointRadius: 3,
+          borderWidth: 1,
+          showLine: showLine,
+          tension: 0.1
+        },
+        {
+          label: 'Min/Refeição (Duração)',
+          data: getData('ingestivo'), // (Usa 'ingestivo' para a duração)
+          borderColor: chartType === 'line' ? '#0b5ed7' : 'rgba(0, 0, 0, 0.5)',
+          backgroundColor: '#0b5ed7',
+          yAxisID: 'y-duracao',
+          pointRadius: 3,
+          borderWidth: 1,
+          showLine: showLine,
+          tension: 0.1
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          type: 'linear', // Eixo X é Contagem de Refeição (1, 2, 3...)
+          title: { display: true, text: 'Presença no Comedouro' }
+        },
+        // Eixo Y Esquerdo (Horas)
+        'y-horas': {
+          type: 'linear',
+          position: 'left',
+          title: { display: true, text: 'Horas' },
+          grid: { color: '#efefef' },
+          min: 0,
+          max: 1440,
+          ticks: {
+            stepSize: 180,
+            callback: (value) => props.minutesToTimeOfDay(value)
+          }
+        },
+        // Eixo Y Direito (Duração)
+        'y-duracao': {
+          type: 'linear',
+          position: 'right',
+          title: { display: true, text: 'Duração (min)' },
+          grid: {
+            drawOnChartArea: false,
+          },
+          min: 0,
+          ticks: {
+            callback: (value) => props.minutesToTime(value)
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          position: 'top', // Move a legenda para o topo
+          align: 'center',  // Centraliza a legenda
+          labels: {
+            font: {
+              weight: 'normal' // Remove o negrito da legenda
+            }
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: (context) => {
+              const label = context.dataset.label || '';
+              const p = context.raw;
+              const xValue = p.x;
+
+              let yValue;
+              if (context.dataset.yAxisID === 'y-horas') {
+                yValue = props.minutesToTimeOfDay(p.y);
+              } else {
+                yValue = props.minutesToTime(p.y);
+              }
+
+              // Mostra o ID e o Lote no tooltip
+              const idLabel = props.highlightId
+                ? `Animal: ${props.highlightId}`
+                : `Animal: ${p.id} | Lote: ${p.lote || 'N/A'}`;
+
+              return `${label} | Refeição #${xValue}: ${yValue} (${idLabel})`;
+            }
+          }
+        }
+      },
+      onClick: (evt, els) => {
+        if (!els?.length) return;
+        const el = els[0];
+        const datasetLabel = combinedChart.data.datasets[el.datasetIndex].label;
+        const ponto = combinedChart.data.datasets[el.datasetIndex].data[el.index];
+
+        emit('point-click', {
+          ...ponto,
+          y_unit: datasetLabel || 'Valor',
+          title: 'Comportamento Ingestivo'
+        });
+      }
+    }
+  });
+};
+
+// Hooks do Vue para construir/destruir o gráfico
+onMounted(buildCombinedChart);
+onBeforeUnmount(() => {
+  if (combinedChart) combinedChart.destroy();
+});
+// Observa a prop 'pontos' E o 'modo' e redesenha o gráfico se ela mudar
+watch(() => [props.pontos, props.modo, props.highlightId, props.grafSelecionado], buildCombinedChart, { deep: true });
 
 
 // Função auxiliar para injetar o título e a label no ponto antes de emitir
 const emitPointClick = (ponto, title, yUnit) => {
-    emit('point-click', {
-        ...ponto,
-        title: title,
-        y_unit: yUnit 
-    });
+  emit('point-click', {
+    ...ponto,
+    title: title,
+    y_unit: yUnit,
+  });
 };
 
-// // Variável reativa para armazenar os DADOS BRUTOS da API
-// const dadosMinutoPorRefeicaoBrutos = ref(null);
+// Lógica para decidir o tipo de gráfico (Linha ou Bolinhas)
+const dynamicChartType = computed(() => {
+  // Se for 'animal', mostra 'line' (linha de tendência)
+  // Se for 'lote' ou 'geral', mostra 'scatter' (bolinhas)
+  if (props.modo === 'animal' && props.animalId) {
+    return 'line';
+  }
+  return 'scatter';
+});
 
-// // Defina os parâmetros necessários para a rota
-// const TIPO_ALVO = 'animal'; 
-// const BRINCO_ALVO = 52; 
-
-// // *******************************************************************
-// // 1. FUNÇÃO DE TRANSFORMAÇÃO
-// // *******************************************************************
-// function transformarDadosGrafico(dadosBrutos) {
-//     if (!dadosBrutos || typeof dadosBrutos !== 'object') {
-//         return [];
-//     }
-    
-//     // Mapeia o objeto (chave: data, valor: minuto) para um array de objetos {x: data, y: valor}
-//     return Object.entries(dadosBrutos).map(([data, valor]) => ({
-//         // Eixo X: Data
-//         x: data, 
-//         // Eixo Y: Valor (minutos)
-//         y: valor, 
-//         // Id para highlight (opcional, mas útil)
-//         id: BRINCO_ALVO, 
-//     }));
-// }
-
-
-// // *******************************************************************
-// // 2. COMPUTED PROPERTY para dados prontos para o gráfico
-// // *******************************************************************
-// const pontosMinRefeicaoTransformados = computed(() => {
-//     // Se a API ainda não retornou ou deu erro, retorna um array vazio.
-//     if (!dadosMinutoPorRefeicaoBrutos.value) {
-//         return [];
-//     }
-//     // Transforma os dados brutos
-//     return transformarDadosGrafico(dadosMinutoPorRefeicaoBrutos.value);
-// });
-
-
-// // *******************************************************************
-// // 3. Hook onMounted
-// // *******************************************************************
-// onMounted(async () => {
-//     console.log(`[API Call] Iniciando requisição para ${TIPO_ALVO}/${BRINCO_ALVO}/`);
-    
-//     try {
-//         const dados = await getMinutoPorRefeicao(TIPO_ALVO, BRINCO_ALVO);
-        
-//         console.log(`[API Sucesso] Dados Brutos:`, dados);
-        
-//         // Armazena os DADOS BRUTOS na variável reativa
-//         dadosMinutoPorRefeicaoBrutos.value = dados; 
-        
-//     } catch (error) {
-//         console.error("[API Erro] Falha ao buscar Minuto Por Refeição.", error.response || error);
-//     }
-// });
 </script>
 
+<style scoped>
+.card {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .05);
+  padding: 10px;
+  height: 420px;
+  margin-top: 16px;
+}
+
+.chart-title {
+  font-size: 1.1rem;
+  font-weight: normal;
+  text-align: center;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.canvas-wrap {
+  position: relative;
+  height: calc(100% - 30px);
+}
+</style>

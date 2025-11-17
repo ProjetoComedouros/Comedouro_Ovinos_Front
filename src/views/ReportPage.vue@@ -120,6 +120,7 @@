@@ -8,7 +8,7 @@
       <ReportHeader :selecionado="selecionado" />
 
       <section class="dash">
-        <h5 class="mb-3">{{ dynamicSectionTitle }}</h5>
+        <h5 class="mb-3">Análise gráfica</h5>
 
         <div class="toolbar">
           <div class="seg">
@@ -98,7 +98,7 @@ import IngestivoCharts from '@/components/charts/IngestivoCharts.vue'
 import DesempenhoCharts from '@/components/charts/DesempenhoCharts.vue'
 import ViabilidadeCharts from '@/components/charts/ViabilidadeCharts.vue'
 
-
+// IMPORTAÇÕES DA API
 import { getConsumoDiario, getMinutoPorRefeicao } from '@/api/comportamentoIngestivo.js';
 import { getEvolucaoPeso, getEvolucaoConsumoDiario, getEvolucaoGanho, getEvolucaoGMD } from '@/api/desempenho.js';
 import { getCustoTotal, getEvolucaoCustoDiario, getGanhoPorDia } from '@/api/viabilidade.js';
@@ -118,7 +118,6 @@ const selecionadoPonto = ref(null)
 const showHourlyModal = ref(false);
 const hourlyData = ref(null);
 
-// eslint-disable-next-line no-unused-vars
 const handlePointClick = (p) => {
   // 1. Atualiza a barra "Selecionado:"
   selecionadoPonto.value = p;
@@ -169,6 +168,12 @@ const emptySource = {
   evolucaoCusto: []
 };
 
+// --- FUNÇÕES DE PROCESSAMENTO (CORRIGIDAS) ---
+
+/**
+ * Transforma dados brutos da API (formato { 'data': valor }) em um array de pontos.
+ * CORRIGIDO: Agora aceita e atribui 'currentLote' (Request 3)
+ */
 const transformData = (data, currentId, currentTipo, currentLote = null) => {
   if (!data || typeof data !== 'object' || Object.keys(data).length === 0) {
     return [];
@@ -186,18 +191,21 @@ const transformData = (data, currentId, currentTipo, currentLote = null) => {
     } else {
       // Modo Lote ou Geral
       pontoId = currentId; // O brinco (ex: "52")
-      pontoLote = currentLote;
+      pontoLote = currentLote; // O lote do animal (ex: 1 ou "lote_real_1")
     }
 
     return {
       x: dateObject,
       y: value,
       id: pontoId,
-      lote: pontoLote,
+      lote: pontoLote, // ⬅️ CORRIGIDO (Request 3)
     }
   });
 };
 
+/**
+ * Processa o array de refeições brutas (agora lê o ID e Lote do animal injetado).
+ */
 function processarRefeicoesBrutas(refeicoesBrutas, fallbackLoteId) {
   const horaEntradaData = [];
   const horaSaidaData = [];
@@ -211,7 +219,7 @@ function processarRefeicoesBrutas(refeicoesBrutas, fallbackLoteId) {
     const saidaMins = timeToMinutes(refeicao.horario_saida);
     const duracaoMins = calculateDuration(refeicao.horario_entrada, refeicao.horario_saida);
 
-
+    // Lê o ID e Lote do animal (injetado) ou usa o fallback
     const animalId = refeicao.animal_brinco || fallbackLoteId;
     const loteId = refeicao.animal_lote || fallbackLoteId;
 
@@ -225,7 +233,9 @@ function processarRefeicoesBrutas(refeicoesBrutas, fallbackLoteId) {
   return { horaEntradaData, horaSaidaData, ingestivoData };
 }
 
-
+/**
+ * Calcula a Viabilidade (Ganho - Custo), tratando todas as datas.
+ */
 function calcularViabilidade(objGanho, objCusto) {
   const viabilidade = {};
   if (!objGanho || !objCusto) return {};
@@ -242,7 +252,9 @@ function calcularViabilidade(objGanho, objCusto) {
   return viabilidade;
 }
 
-
+/**
+ * Converte Gramas para Quilos (para dados de Consumo).
+ */
 function dividirValoresPor1000(objDados) {
   if (!objDados || typeof objDados !== 'object') {
     return objDados;
@@ -259,8 +271,10 @@ function dividirValoresPor1000(objDados) {
   return objConvertido;
 }
 
-
-async function fetchAllDataForOneAnimal(tipo, id, lote) {
+/**
+ * Busca dados para UM animal e INJETA o ID e LOTE nas refeições.
+ */
+async function fetchAllDataForOneAnimal(tipo, id, lote) { // ⬅️ Aceita 'lote'
   const precoRacao = precoKgRacao.value;
   const precoPesoVivo = precoKgPesoVivo.value;
 
@@ -296,8 +310,8 @@ async function fetchAllDataForOneAnimal(tipo, id, lote) {
     const viabilidade = calcularViabilidade(ganhoPorDia, custoCorrigido_g_para_kg);
 
     return {
-      id: id,
-      lote: lote,
+      id: id, // O brinco (ex: "52")
+      lote: lote, // O lote (ex: "lote_real_1")
       consumo, minuto, refeicoesBrutas, evolucaoPeso, evolucaoConsumo, evolucaoGanho, evolucaoGMD,
       custoTotal, evolucaoCusto: custoCorrigido_g_para_kg, ganhoPorDia,
       viabilidade
@@ -335,7 +349,7 @@ function mergeAllResults(arrayDeResultados) {
 
   validResults.forEach(animalData => {
     const animalId = animalData.id;
-    const animalLote = animalData.lote;
+    const animalLote = animalData.lote; // ⬅️ Pega o lote
 
     // Agregação de valores simples
     if (animalData.consumo && typeof animalData.consumo === 'object') {
@@ -410,17 +424,11 @@ async function fetchHourlyData(animalId, data) {
   }
 
   try {
+    // 1. Chama a API (getConsumoDiario com data)
+    // A API retorna {"12:00:00": 300.5, ...} (em gramas)
+    const dados = await getConsumoDiario('animal', animalId, isoDate);
 
-    const dadosBrutos = await getConsumoDiario('animal', animalId, isoDate);
-
-
-    const dadosProcessados = {};
-    if (Array.isArray(dadosBrutos)) {
-      for (const item of dadosBrutos) {
-        Object.assign(dadosProcessados, item);
-      }
-    }
-    hourlyData.value = dadosProcessados;
+    hourlyData.value = dados;
     showHourlyModal.value = true; // 2. Mostra o modal
 
   } catch (e) {
@@ -428,131 +436,124 @@ async function fetchHourlyData(animalId, data) {
   }
 }
 
-async function fetchIndividualAnimalData(id) {
-  console.log(`[fetchIndividualAnimalData] Buscando dados para o animal ID: ${id}`);
-  try {
-    const tipo = 'animal';
-    const [consumo, minuto, refeicoesBrutas, evolucaoPeso, evolucaoConsumo, evolucaoGanho, evolucaoGMD,
-      custoTotal, evolucaoCusto, ganhoPorDia] = await Promise.all([
-        (async () => { try { return await getConsumoDiario(tipo, id); } catch (e) { return null; } })(),
-        (async () => { try { return await getMinutoPorRefeicao(tipo, id); } catch (e) { return null; } })(),
-        (async () => {
-          if (!id) return []; try {
-            const refeicoes = await refeicaoGet(null, { animal: id });
-            if (Array.isArray(refeicoes)) {
-              return refeicoes.map(r => ({ ...r, animal_brinco: id, animal_lote: loteId.value }));
-            }
-            return [];
-          } catch (e) { return []; }
-        })(),
-        (async () => { try { return await getEvolucaoPeso(tipo, id); } catch (e) { return null; } })(),
-        (async () => { try { return await getEvolucaoConsumoDiario(tipo, id); } catch (e) { return null; } })(),
-        (async () => { try { return await getEvolucaoGanho(tipo, id); } catch (e) { return null; } })(),
-        (async () => { try { return await getEvolucaoGMD(tipo, id); } catch (e) { return null; } })(),
-        (async () => { try { return await getCustoTotal(tipo, id, Number(precoKgRacao.value)); } catch (e) { return null; } })(),
-        (async () => { try { return await getEvolucaoCustoDiario(tipo, id, Number(precoKgRacao.value)); } catch (e) { return null; } })(),
-        (async () => { try { return await getGanhoPorDia(tipo, id, Number(precoKgPesoVivo.value)); } catch (e) { return null; } })(),
-      ]);
-
-    const { horaEntradaData, horaSaidaData, ingestivoData: duracaoRefeicao } = processarRefeicoesBrutas(refeicoesBrutas, id);
-    const custoCorrigido_g_para_kg = dividirValoresPor1000(evolucaoCusto);
-    const viabilidade = calcularViabilidade(ganhoPorDia, custoCorrigido_g_para_kg);
-    const consumoCorrigido = dividirValoresPor1000(consumo);
-    const evolucaoConsumoCorrigido = dividirValoresPor1000(evolucaoConsumo);
-
-    dadosAPI.value = {
-      ...emptySource,
-      consumoDiario: transformData(consumoCorrigido, id, tipo, loteId.value),
-      minRefeicao: transformData(minuto, id, tipo),
-      horaEntrada: horaEntradaData,
-      horaSaida: horaSaidaData,
-      ingestivo: duracaoRefeicao,
-      EvolucaoPVDia: transformData(evolucaoPeso, id, tipo, loteId.value),
-      EvolucaoConsumoDiario: transformData(evolucaoConsumoCorrigido, id, tipo, loteId.value),
-      EvolucaoGanho: transformData(evolucaoGanho, id, tipo),
-      EvolucaoGMD: transformData(evolucaoGMD, id, tipo),
-      custoTotal: custoTotal?.custo_total || 0,
-      evolucaoCusto: transformData(custoCorrigido_g_para_kg, id, tipo, loteId.value),
-      ganhopordia: transformData(ganhoPorDia, id, tipo, loteId.value),
-      viabilidade: transformData(viabilidade, id, tipo, loteId.value),
-      EvolucaoPVPeriodo: transformData(evolucaoPeso, id, tipo),
-    };
-  } catch (error) {
-    console.error(`Erro em fetchIndividualAnimalData para o ID ${id}:`, error);
-    const serverError = error.response?.data?.erro;
-    mensagemErro.value = serverError || 'Erro desconhecido ao buscar dados.';
-    dadosAPI.value = null;
-  }
-}
-
-async function fetchAggregatedData(tipo, id) {
-  console.log(`[fetchAggregatedData] Buscando dados agregados. Tipo: '${tipo}', ID: '${id}'`);
-  try {
-
-
-    const idDoLote = id;
-    let animaisDoLote;
-
-    if (tipo === 'geral') {
-      console.log("[fetchAggregatedData] Modo GERAL: buscando TODOS os animais.");
-      animaisDoLote = await animalGet();
-    } else {
-      console.log(`[fetchAggregatedData] Modo LOTE: buscando animais do lote '${idDoLote}'.`);
-      animaisDoLote = await animalGet(null, { lote: idDoLote });
-    }
-
-    const animaisFiltrados = animaisDoLote.filter(
-      animal => animal.brinco_numero?.toLowerCase() !== "ovelha001"
-    );
-
-    if (animaisFiltrados.length === 0) {
-      throw new Error(`Nenhum animal válido encontrado para a busca.`);
-    }
-
-
-    const todasPromises = animaisFiltrados.map(animal => {
-      return fetchAllDataForOneAnimal('animal', animal.brinco_numero, animal.lote);
-    });
-    const resultadosDeTodosAnimais = await Promise.all(todasPromises);
-
-
-
-    const dadosAgregados = mergeAllResults(resultadosDeTodosAnimais);
-
-    dadosAPI.value = {
-      ...emptySource,
-      consumoDiario: dadosAgregados.consumoDiario,
-      minRefeicao: dadosAgregados.minRefeicao,
-      horaEntrada: dadosAgregados.horaEntrada,
-      horaSaida: dadosAgregados.horaSaida,
-      ingestivo: dadosAgregados.ingestivo,
-      EvolucaoPVDia: dadosAgregados.evolucaoPeso,
-      EvolucaoConsumoDiario: dadosAgregados.evolucaoConsumo,
-      EvolucaoGanho: dadosAgregados.evolucaoGanho,
-      EvolucaoGMD: dadosAgregados.evolucaoGMD,
-      custoTotal: dadosAgregados.custoTotalAcumulado || 0,
-      evolucaoCusto: dadosAgregados.evolucaoCusto,
-      ganhopordia: dadosAgregados.ganhoPorDia,
-      viabilidade: dadosAgregados.viabilidade,
-      EvolucaoPVPeriodo: dadosAgregados.evolucaoPeso,
-    };
-  } catch (error) {
-    console.error(`Erro em fetchAggregatedData para ${tipo}/${id}:`, error);
-    const serverError = error.response?.data?.erro || error.message;
-    mensagemErro.value = serverError || 'Erro desconhecido ao buscar dados agregados.';
-    dadosAPI.value = null;
-  }
-}
-
+/**
+ * Função principal de busca de dados (Modo Individual ou Lote)
+ */
 async function fetchData(tipo, id) {
   mensagemErro.value = '';
   dadosAPI.value = null;
-  modoGrafico.value = tipo;
+  modoGrafico.value = tipo; // Atualiza o modo do gráfico (animal, lote, ou geral)
+  console.log(`[fetchData] Iniciando busca. Tipo: '${tipo}', ID: '${id}'`);
 
-  if (tipo === 'animal' && id) {
-    await fetchIndividualAnimalData(id);
-  } else {
-    await fetchAggregatedData(tipo, id);
+  const isBuscaIndividual = (tipo === 'animal' && id);
+
+  try {
+    if (isBuscaIndividual) {
+      // ############ MODO INDIVIDUAL ############
+      const [consumo, minuto, refeicoesBrutas, evolucaoPeso, evolucaoConsumo, evolucaoGanho, evolucaoGMD,
+        custoTotal, evolucaoCusto, ganhoPorDia] = await Promise.all([
+          (async () => { try { return await getConsumoDiario(tipo, id); } catch (e) { return null; } })(),
+          (async () => { try { return await getMinutoPorRefeicao(tipo, id); } catch (e) { return null; } })(),
+          (async () => {
+            if (tipo !== 'animal' || !id) return []; try {
+              const refeicoes = await refeicaoGet(null, { animal: id });
+              if (Array.isArray(refeicoes)) {
+                return refeicoes.map(r => ({ ...r, animal_brinco: id, animal_lote: loteId.value }));
+              }
+              return [];
+            } catch (e) { return []; }
+          })(),
+          (async () => { if (tipo !== 'animal') return null; try { return await getEvolucaoPeso(tipo, id); } catch (e) { return null; } })(),
+          (async () => { if (tipo !== 'animal') return null; try { return await getEvolucaoConsumoDiario(tipo, id); } catch (e) { return null; } })(),
+          (async () => { if (tipo !== 'animal') return null; try { return await getEvolucaoGanho(tipo, id); } catch (e) { return null; } })(),
+          (async () => { if (tipo !== 'animal') return null; try { return await getEvolucaoGMD(tipo, id); } catch (e) { return null; } })(),
+          (async () => { try { return await getCustoTotal(tipo, id, Number(precoKgRacao.value)); } catch (e) { return null; } })(),
+          (async () => { try { return await getEvolucaoCustoDiario(tipo, id, Number(precoKgRacao.value)); } catch (e) { return null; } })(),
+          (async () => { try { return await getGanhoPorDia(tipo, id, Number(precoKgPesoVivo.value)); } catch (e) { return null; } })(),
+        ]);
+
+      const { horaEntradaData, horaSaidaData, ingestivoData: duracaoRefeicao } = processarRefeicoesBrutas(
+        refeicoesBrutas, id
+      );
+      const custoCorrigido_g_para_kg = dividirValoresPor1000(evolucaoCusto);
+      const viabilidade = calcularViabilidade(ganhoPorDia, custoCorrigido_g_para_kg);
+
+      const consumoCorrigido = dividirValoresPor1000(consumo);
+      const evolucaoConsumoCorrigido = dividirValoresPor1000(evolucaoConsumo);
+
+      // MAPEAMENTO (INDIVIDUAL)
+      dadosAPI.value = {
+        ...emptySource,
+        consumoDiario: transformData(consumoCorrigido, id, tipo, loteId.value),
+        minRefeicao: transformData(minuto, id, tipo),
+        horaEntrada: horaEntradaData,
+        horaSaida: horaSaidaData,
+        ingestivo: duracaoRefeicao,
+        EvolucaoPVDia: transformData(evolucaoPeso, id, tipo, loteId.value),
+        EvolucaoConsumoDiario: transformData(evolucaoConsumoCorrigido, id, tipo, loteId.value),
+        EvolucaoGanho: transformData(evolucaoGanho, id, tipo),
+        EvolucaoGMD: transformData(evolucaoGMD, id, tipo),
+        custoTotal: custoTotal?.custo_total || 0,
+        evolucaoCusto: transformData(custoCorrigido_g_para_kg, id, tipo, loteId.value),
+        ganhopordia: transformData(ganhoPorDia, id, tipo, loteId.value),
+        viabilidade: transformData(viabilidade, id, tipo, loteId.value),
+        EvolucaoPVPeriodo: transformData(evolucaoPeso, id, tipo), // <-- CORREÇÃO AQUI
+      };
+
+    } else {
+      // ############ MODO LOTE/GERAL ############
+
+      const idDoLote = id; // Será 'lote_real_1' (lote) ou 'null' (geral)
+      let animaisDoLote;
+
+      if (tipo === 'geral') { // Request 2: Modo Geral
+        console.log("[fetchData] Modo GERAL: buscando TODOS os animais.");
+        animaisDoLote = await animalGet(); // Sem filtro
+      } else { // Request 1: Modo Lote Específico
+        console.log(`[fetchData] Modo LOTE: buscando animais do lote '${idDoLote}'.`);
+        animaisDoLote = await animalGet(null, { lote: idDoLote });
+      }
+
+      const animaisFiltrados = animaisDoLote.filter(
+        animal => animal.brinco_numero?.toLowerCase() !== "ovelha001"
+      );
+      if (animaisFiltrados.length === 0) {
+        mensagemErro.value = `⚠️ Nenhum animal válido encontrado para a busca.`;
+        return;
+      }
+
+      // CORREÇÃO: Passa o 'animal.lote' (que pode ser o nome ou ID)
+      const todasPromises = animaisFiltrados.map(animal => {
+        return fetchAllDataForOneAnimal('animal', animal.brinco_numero, animal.lote);
+      });
+      const resultadosDeTodosAnimais = await Promise.all(todasPromises);
+
+      const dadosAgregados = mergeAllResults(resultadosDeTodosAnimais);
+
+      // MAPEAMENTO (LOTE)
+      dadosAPI.value = {
+        ...emptySource,
+        consumoDiario: dadosAgregados.consumoDiario,
+        minRefeicao: dadosAgregados.minRefeicao,
+        horaEntrada: dadosAgregados.horaEntrada,
+        horaSaida: dadosAgregados.horaSaida,
+        ingestivo: dadosAgregados.ingestivo,
+        EvolucaoPVDia: dadosAgregados.evolucaoPeso,
+        EvolucaoConsumoDiario: dadosAgregados.evolucaoConsumo,
+        EvolucaoGanho: dadosAgregados.evolucaoGanho,
+        EvolucaoGMD: dadosAgregados.evolucaoGMD,
+        custoTotal: dadosAgregados.custoTotalAcumulado || 0,
+        evolucaoCusto: dadosAgregados.evolucaoCusto,
+        ganhopordia: dadosAgregados.ganhoPorDia,
+        viabilidade: dadosAgregados.viabilidade,
+        EvolucaoPVPeriodo: dadosAgregados.evolucaoPeso, // <-- E CORREÇÃO AQUI
+      };
+    }
+  } catch (error) {
+    console.error("Erro no fetchData:", error);
+    const serverError = error.response?.data?.erro;
+    mensagemErro.value = serverError || 'Erro desconhecido ao buscar dados.';
+    dadosAPI.value = null;
   }
 }
 
@@ -566,11 +567,13 @@ onMounted(async () => {
   }
 });
 onMounted(() => {
+  // Carga inicial (Modo Lote padrão)
   fetchData('lote', loteId.value || 'lote_real_1');
 });
 
 // --- Funções Auxiliares de Formatação ---
 
+// 1. DURAÇÃO (MM:SS)
 const minutesToTime = (totalMins) => {
   const mins = Number(totalMins);
   if (isNaN(mins) || mins < 0) return '00:00';
@@ -582,11 +585,11 @@ const minutesToTime = (totalMins) => {
   // Converte a parte decimal para segundos
   const seconds = Math.round(decimalPart * 60);
 
-
+  // Formata as partes (SEM a lógica 'if/else' que causava o bug)
   const m = String(minutesPart).padStart(2, '0');
   const s = String(seconds).padStart(2, '0');
 
-  return `${m}:${s}`;
+  return `${m}:${s}`; // Sempre retorna MM:SS (ex: "57:44" ou "60:00")
 }
 
 // 2. HORA DO DIA (HH:MM)
@@ -641,15 +644,18 @@ const calculateDuration = (entrada, saida) => {
   return timeToMinutes(saida) - timeToMinutes(entrada);
 };
 
+// 4. FUNÇÃO formatSelectedX CORRIGIDA
 const formatSelectedX = (ponto) => {
   if (!ponto || ponto.x === undefined) return 'N/A';
 
   const yUnit = ponto.y_unit || '';
 
+  // Verifica se é um gráfico de Ingestivo (onde X é um número de refeição)
   if (yUnit.includes('Hora') || yUnit.includes('Duração') || yUnit.includes('Min/Refeição')) {
     return `Presença no comedouro ${ponto.x}`;
   }
 
+  // Senão, é um gráfico de Data
   return `Data/Ref: ${formatDate(ponto.x)}`;
 };
 
@@ -660,12 +666,12 @@ const formatSelectedY = (ponto) => {
     case 'Minutos':
     case 'Duração (min)':
     case 'Min/Refeição (Duração)':
-      return minutesToTime(ponto.y);
+      return minutesToTime(ponto.y); // Formato Duração (MM:SS)
     case 'Horas':
     case 'Hora (HH:MM)':
     case 'Hora Entrada':
     case 'Hora Saída':
-      return minutesToTimeOfDay(ponto.y);
+      return minutesToTimeOfDay(ponto.y); // Formato Hora do Dia (HH:MM)
     case 'Kg':
     case 'GMD (kg)':
     case 'Peso Vivo (kg)':
@@ -685,6 +691,7 @@ const selecionado = ref(false)
 
 let debounceTimer;
 
+// Lógica de Watch (Observador) - CORRIGIDA
 watch([modo, animalId, loteId], ([newModo, newAnimalId, newLoteId]) => {
   selecionadoPonto.value = null;
   mensagemErro.value = '';
@@ -692,48 +699,33 @@ watch([modo, animalId, loteId], ([newModo, newAnimalId, newLoteId]) => {
   clearTimeout(debounceTimer);
 
   debounceTimer = setTimeout(() => {
+    if (newModo === 'geral') {
+      animalId.value = '';
+      loteId.value = ''; // Limpa o loteId se for 'Geral'
+    }
+
+    const ID_LOTE_PADRAO = loteId.value || 'lote_real_1';
+
     if (newModo === 'animal' && newAnimalId) {
+      // 1. MODO ANIMAL
       fetchData('animal', newAnimalId);
     }
     else if (newModo === 'lote' && newLoteId) {
+      // 2. MODO LOTE (Request 1)
       fetchData('lote', newLoteId);
     }
     else if (newModo === 'geral') {
-      animalId.value = '';
-      loteId.value = ''; // Limpa o loteId se for 'Geral'
+      // 3. MODO GERAL (Request 2)
       fetchData('geral', null); // 'null' ID
     }
     else {
-      // Fallback para o lote padrão se nenhuma outra condição for atendida
-      const ID_LOTE_PADRAO = 'lote_real_1';
-      if (loteId.value !== ID_LOTE_PADRAO) {
-        // Apenas busca se o loteId atual não for o padrão para evitar loop
-        fetchData('lote', ID_LOTE_PADRAO);
-      } else {
-        console.log("Watch acionado, mas sem ação (condições não atendidas ou já no lote padrão).");
-      }
+      // 4. FALLBACK (Modo Lote/Animal vazio)
+      fetchData('lote', ID_LOTE_PADRAO);
     }
   }, 500);
 });
 
-
-const dynamicSectionTitle = computed(() => {
-  if (modoGrafico.value === 'animal') {
-    return `Análise Individual: Animal ${animalId.value}`;
-  }
-  if (modoGrafico.value === 'lote') {
-    if (loteId.value) {
-      return `Análise de Lote: ${loteId.value}`;
-    }
-    return 'Análise de Lote (Padrão)';
-  }
-  if (modoGrafico.value === 'geral') {
-    return 'Análise Geral (Todos os Lotes)';
-  }
-  return 'Análise Gráfica';
-});
-
-
+// Fonte computada
 const fonte = computed(() => {
   if (!dadosAPI.value) {
     return emptySource;
@@ -741,6 +733,7 @@ const fonte = computed(() => {
   return dadosAPI.value;
 });
 
+// HighlightId
 const highlightId = computed(() => {
   if (selecionadoPonto.value) {
     return selecionadoPonto.value.id;
@@ -769,7 +762,6 @@ body {
   padding: 2rem;
   margin-top: 56px;
 }
- 
 
 /* seção nova */
 .dash {

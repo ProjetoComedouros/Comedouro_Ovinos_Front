@@ -29,6 +29,8 @@ export async function getCustoTotal(tipo, id, precoKgRacao) {
     try {
         // A chamada Axios é simplificada, pois o preço está na URL
         const response = await api.get(url); 
+        console.log(`[API ROTA] custototal URL: ${url}`);
+        console.log(`[API SUCESSO] custototal Dados Brutos:`, response.data);
         return response.data;
         
     } catch (error) {
@@ -57,8 +59,14 @@ export async function getEvolucaoCustoDiario(tipo, id, precoKgRacao) {
         throw new Error(`ID de ${tipo} é obrigatório para buscar evolução de custo diário.`);
     }
     const url = `evolucao-custo-diario/${tipo}/${id}/${precoKgRacao}/`;
+    const apiParams= {
+        preco_kg_racao: precoKgRacao
+    }; 
+
     try {
-        const response = await api.get(url); 
+        const response = await api.get(url, { params: apiParams }); 
+        console.log(`[API ROTA] evolcusto URL: ${url}`);
+        console.log(`[API SUCESSO] evolcusto Dados Brutos:`, response.data);
         return response.data;
         
     } catch (error) {
@@ -90,9 +98,14 @@ export async function getGanhoPorDia(tipo, id, precoKgPesoVivo) {
     }
     
     const url = `ganho-por-dia/${tipo}/${id}/${precoKgPesoVivo}/`;
+
+    const apiParams= {
+        preco_kg_peso_vivo: precoKgPesoVivo
+    }; 
+
     try {
         // A chamada Axios é simplificada, pois o preço está na URL
-        const response = await api.get(url); 
+        const response = await api.get(url, { params: apiParams }); 
         return response.data;
         
     } catch (error) {

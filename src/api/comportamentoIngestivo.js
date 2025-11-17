@@ -1,81 +1,54 @@
-import api from './api'; // Importa a instância do Axios que você criou
+import api from './api.js';
 
 /**
- * Funções para requisições de Comportamento Ingestivo
- * animal_ou_lote: 'animal' ou 'lote'
- * numero: ID do animal (brinco) ou ID do lote
- * data: Data específica no formato 'DD-MM-AAAA' (opcional)
- */
-
-
-// =========================================================
-// ROTA: consumo-diario
-// =========================================================
-
-/**
- * Busca o consumo diário de um animal ou lote.
- * Rotas:
- * - /consumo-diario/<str:animal_ou_lote>/<int:numero>/
- * - /consumo-diario/<str:animal_ou_lote>/<int:numero>/<str:data>/
- * * @param {string} tipo - 'animal' ou 'lote'.
- * @param {number} id - Número do brinco (animal) ou ID do lote.
- * @param {string} [data=null] - Data no formato 'DD-MM-AAAA' (opcional).
- * @returns {Promise<Object>} Dados de consumo diário.
+ * Busca o consumo diário (resumo) OU os dados por hora (detalhe).
+ * Se 'data' for null, retorna o resumo diário (ex: {"2025-10-10": 55.1}).
+ * Se 'data' for (YYYY-MM-DD), retorna o detalhe por hora (ex: {"12:58:00": 300.5}).
  */
 export async function getConsumoDiario(tipo, id, data = null) {
     if (!['animal', 'lote'].includes(tipo)) {
         throw new Error("Tipo inválido. Use 'animal' ou 'lote'.");
     }
-    
+
     // Constrói a URL base
     let url = `consumo-diario/${tipo}/${id}/`;
-    
-    // Adiciona a data à URL se fornecida
+
+    // ⬅️ ATUALIZAÇÃO AQUI
+    // Se uma data for fornecida, anexa à URL
     if (data) {
-        url += `/${data}/`;
+        url += `${data}/`;
     }
+
+    console.log(`[API ROTA] Consumo Diário URL: ${url}`);
 
     try {
         const response = await api.get(url);
-        return response.data; // Retorna os dados da resposta
+        console.log(`[API SUCESSO] Consumo Diário Dados Brutos:`, response.data);
+        return response.data;
     } catch (error) {
-        // Lança o erro para ser tratado pelo componente que chamou
-        console.error("Erro ao buscar Consumo Diário:", error.response || error);
-        throw error; 
+        console.error(`[API ERRO] Consumo Diário Falhou para ${tipo}/${id}:`, error.response?.status, error.response?.data);
+        throw error;
     }
 }
 
-
-// =========================================================
-// ROTA: minuto-por-refeicao
-// =========================================================
-
 /**
- * Busca o relatório de minuto por refeição de um animal ou lote.
- * Rotas:
- * - /minuto-por-refeicao/<str:animal_ou_lote>/<int:numero>/
- * - /minuto-por-refeicao/<str:animal_ou_lote>/<int:numero>/<str:data>/
- * * @param {string} tipo - 'animal' ou 'lote'.
- * @param {number} id - Número do brinco (animal) ou ID do lote.
- * @param {string} [data=null] - Data no formato 'DD-MM-AAAA' (opcional).
- * @returns {Promise<Object>} Dados de minuto por refeição.
+ * Busca o tempo médio por refeição (resumo diário).
+ * Esta função não muda.
  */
 export async function getMinutoPorRefeicao(tipo, id, data = null) {
     if (!['animal', 'lote'].includes(tipo)) {
         throw new Error("Tipo inválido. Use 'animal' ou 'lote'.");
     }
-    
-    // Constrói a URL base
+
     let url = `minuto-por-refeicao/${tipo}/${id}`;
-    
-    // Adiciona a data à URL se fornecida
     if (data) {
         url += `/${data}/`;
     }
+
     console.log(`[API ROTA] Min/Refeição URL: ${url}`);
     try {
         const response = await api.get(url);
-        console.log(`[API SUCESSO] Min/Refeição Dados Brutos:`, response.data); // ⬅️ NOVO LOG DE SUCESSO
+        console.log(`[API SUCESSO] Min/Refeição Dados Brutos:`, response.data);
         return response.data;
     } catch (error) {
         console.error(`[API ERRO] Min/Refeição Falhou para ${tipo}/${id}:`, error.response?.status, error.response?.data);
